@@ -14,39 +14,42 @@ const sevColor = (s: string) => {
   return "var(--sev-low)";
 };
 
-const SAMPLE_REPOS = ["payments-api", "auth-service", "web-frontend"];
-const SAMPLE_FILES = ["src/handlers/checkout.ts", "internal/auth/middleware.go", "lib/db/queries.ts"];
-const SAMPLE_SEV = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
+function getWsUrl() {
+  const url = new URL(API_BASE);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.pathname = "/ws/live";
+  url.search = "";
+  return url.toString();
+}
 
 export default function LiveFeedToast() {
   const addFinding = useStore((s) => s.addFinding);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   useEffect(() => {
-    // Simulated live feed (no backend WebSocket available in preview).
-    const interval = setInterval(() => {
-      const sev = SAMPLE_SEV[Math.floor(Math.random() * SAMPLE_SEV.length)];
-      const finding: Finding = {
-        id: Date.now(),
-        repo: SAMPLE_REPOS[Math.floor(Math.random() * SAMPLE_REPOS.length)],
-        file_path: SAMPLE_FILES[Math.floor(Math.random() * SAMPLE_FILES.length)],
-        line_number: Math.floor(Math.random() * 200) + 1,
-        rule_id: "SEC-" + Math.floor(Math.random() * 999).toString().padStart(3, "0"),
-        severity: sev,
-        message: "New finding detected by live scanner",
-        fix_suggestion: "// Apply secure pattern",
-        framework: "soc2",
-        commit_sha: "abcd123",
-        status: "open",
-        created_at: new Date().toISOString(),
-      };
-      addFinding(finding);
-      const toast: Toast = { id: finding.id, finding };
-      setToasts((prev) => [...prev, toast]);
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toast.id)), 4500);
-    }, 18000);
+    const ws = new WebSocket(getWsUrl());
 
-    return () => clearInterval(interval);
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.event !== "new_finding" || !payload?.data) return;
+        const finding = payload.data as Finding;
+        addFinding(finding);
+        const toast: Toast = { id: finding.id, finding };
+        setToasts((prev) => [...prev, toast]);
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+        }, 4500);
+      } catch {
+        // Ignore malformed ws payloads.
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
   }, [addFinding]);
 
   if (toasts.length === 0) return null;

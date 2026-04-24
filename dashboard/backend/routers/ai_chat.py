@@ -73,7 +73,10 @@ Answer concisely and practically."""
                     if response.status_code != 200:
                         yield "AI service is currently offline. Please try again later."
                         return
-                    
+
+                    # USP 4: Always lead with the privacy guarantee
+                    yield "🔒 *Powered by local AI — your code never leaves this machine.*\n\n"
+
                     async for chunk in response.aiter_lines():
                         if chunk:
                             try:

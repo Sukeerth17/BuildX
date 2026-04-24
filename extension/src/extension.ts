@@ -66,6 +66,8 @@ export async function activate(context: vscode.ExtensionContext) {
             }
 
             outputChannel.appendLine(`File saved: ${fileName}`);
+            // USP 5: Notify user that auto-scan is running (visible shift-left moment)
+            vscode.window.setStatusBarMessage(`$(sync~spin) ComplianceAI: Auto-scanning ${require('path').basename(fileName)}...`, 4000);
             await handleFileScan(document, context);
         })
     );
@@ -187,6 +189,8 @@ async function handleFileScan(document: vscode.TextDocument, context: vscode.Ext
                             severity: result.severity,
                             fix: result.fix,
                             framework: result.framework,
+                            scanner: (result as any).scanner || 'extension',
+                            plain_english: (result as any).plainEnglish || '',
                         },
                     })),
                 },

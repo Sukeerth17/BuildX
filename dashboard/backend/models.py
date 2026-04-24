@@ -12,8 +12,11 @@ class Finding(Base):
     severity = Column(String(20), index=True)
     message = Column(Text)
     fix_suggestion = Column(Text)
-    framework = Column(String(100), index=True)
+    framework = Column(String(255), index=True)
     commit_sha = Column(String(40), index=True)
+    scanner = Column(String(50), default="unknown", index=True)
+    plain_english = Column(Text, default="")
+    is_false_positive = Column(Integer, default=0)  # 0=real, 1=false positive
     created_at = Column(DateTime, default=func.now())
     status = Column(String(20), default="open", index=True)
 

@@ -7,6 +7,7 @@ import { ComplianceScore } from './types';
  */
 export class StatusBarManager {
     private statusBarItem: vscode.StatusBarItem;
+    private privacyBadge: vscode.StatusBarItem;
 
     constructor() {
         this.statusBarItem = vscode.window.createStatusBarItem(
@@ -17,13 +18,24 @@ export class StatusBarManager {
         this.statusBarItem.command = 'complianceai.showDashboard';
         this.statusBarItem.show();
         this.setIdle();
+
+        // USP 4: Permanent air-gap privacy indicator
+        this.privacyBadge = vscode.window.createStatusBarItem(
+            vscode.StatusBarAlignment.Left,
+            99
+        );
+        this.privacyBadge.name = 'ComplianceAI Privacy';
+        this.privacyBadge.text = '$(lock) Air-Gapped';
+        this.privacyBadge.tooltip = 'ComplianceAI: Your code never leaves this machine. All AI runs locally via Ollama.';
+        this.privacyBadge.color = new vscode.ThemeColor('statusBarItem.prominentForeground');
+        this.privacyBadge.show();
     }
 
     /**
      * Show a loading state while scanning.
      */
     setLoading(): void {
-        this.statusBarItem.text = '$(loading~spin) ComplianceAI: Scanning...';
+        this.statusBarItem.text = '$(sync~spin) ComplianceAI: Scanning...';
         this.statusBarItem.color = undefined;
     }
 
@@ -92,5 +104,6 @@ export class StatusBarManager {
      */
     dispose(): void {
         this.statusBarItem.dispose();
+        this.privacyBadge.dispose();
     }
 }

@@ -45,6 +45,9 @@ def write_sarif(findings: List[Dict]) -> str:
                 "severity": f.get("severity", "LOW"),
                 "fix": f.get("fix_suggestion", ""),
                 "framework": f.get("framework", ""),
+                "scanner": f.get("scanner", "unknown"),
+                "plain_english": f.get("plain_english_explanation", ""),
+                "is_false_positive": f.get("is_false_positive", False),
             }
         })
 

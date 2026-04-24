@@ -40,7 +40,10 @@ async def create_findings(body: Dict[Any, Any], db: Session = Depends(get_db), c
                 severity = props.get("severity", "LOW")
                 fix_suggestion = props.get("fix", "")
                 framework = props.get("framework", "")
-                
+                scanner = props.get("scanner", "unknown")
+                plain_english = props.get("plain_english", "")
+                is_false_positive = 1 if props.get("is_false_positive", False) else 0
+
                 # Parse repo name from file_path (first segment)
                 repo = "unknown"
                 if file_path != "unknown" and "/" in file_path:
@@ -57,7 +60,10 @@ async def create_findings(body: Dict[Any, Any], db: Session = Depends(get_db), c
                     message=message,
                     fix_suggestion=fix_suggestion,
                     framework=framework,
-                    commit_sha=commit_sha
+                    commit_sha=commit_sha,
+                    scanner=scanner,
+                    plain_english=plain_english,
+                    is_false_positive=is_false_positive,
                 )
                 db.add(new_finding)
                 db.commit()
@@ -74,7 +80,10 @@ async def create_findings(body: Dict[Any, Any], db: Session = Depends(get_db), c
                     "severity": new_finding.severity,
                     "message": new_finding.message,
                     "fix_suggestion": new_finding.fix_suggestion,
+                    "plain_english": new_finding.plain_english,
                     "framework": new_finding.framework,
+                    "scanner": new_finding.scanner,
+                    "is_false_positive": new_finding.is_false_positive,
                     "commit_sha": new_finding.commit_sha,
                     "status": new_finding.status,
                     "created_at": new_finding.created_at.isoformat()
@@ -132,7 +141,10 @@ def get_findings(
             "severity": f.severity,
             "message": f.message,
             "fix_suggestion": f.fix_suggestion,
+            "plain_english": f.plain_english,
             "framework": f.framework,
+            "scanner": f.scanner,
+            "is_false_positive": f.is_false_positive,
             "commit_sha": f.commit_sha,
             "status": f.status,
             "created_at": f.created_at.isoformat()

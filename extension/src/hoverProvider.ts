@@ -48,14 +48,28 @@ export class HoverProvider implements vscode.HoverProvider {
             const markdown = new vscode.MarkdownString();
             markdown.isTrusted = true;
 
-            // Build hover content
+            // Header: Rule ID and message
             markdown.appendMarkdown(`### ${scanResult.ruleId}: ${scanResult.message}\n\n`);
-            markdown.appendMarkdown(`**Severity:** ${this.getSeverityBadge(scanResult.severity)}\n\n`);
-            markdown.appendMarkdown(`**Framework:** \`${scanResult.framework}\`\n\n`);
-            markdown.appendMarkdown(`### Fix Suggestion\n\n`);
-            markdown.appendMarkdown(`${scanResult.fix}\n\n`);
+
+            // Severity + Scanner attribution (USP 1)
             markdown.appendMarkdown(
-                `[Learn more](https://github.com/Sukeerth17/BuildX) • [Apply Fix](command:complianceai.applyFix?${encodeURIComponent(JSON.stringify({ line: position.line, ruleId: scanResult.ruleId }))})`
+                `**Severity:** ${this.getSeverityBadge(scanResult.severity)}  |  **Scanner:** \`${(scanResult as any).scanner || 'unknown'}\`\n\n`
+            );
+
+            // Compliance framework (USP 2)
+            markdown.appendMarkdown(`**Framework:** \`${scanResult.framework || 'N/A'}\`\n\n`);
+
+            // USP 3: Plain English explanation
+            const plainEnglish = (scanResult as any).plainEnglish;
+            if (plainEnglish) {
+                markdown.appendMarkdown(`---\n\n**💡 What this means:**\n\n${plainEnglish}\n\n`);
+            }
+
+            // Fix suggestion
+            markdown.appendMarkdown(`---\n\n**🔧 How to fix it:**\n\n${scanResult.fix || '_No fix suggestion available._'}\n\n`);
+
+            markdown.appendMarkdown(
+                `[Learn more](https://github.com/Sukeerith17/BuildX) • [Apply Fix](command:complianceai.applyFix?${encodeURIComponent(JSON.stringify({ line: position.line, ruleId: scanResult.ruleId }))})`
             );
 
             markdownContents.push(markdown);

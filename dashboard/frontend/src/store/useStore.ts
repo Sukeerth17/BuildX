@@ -20,6 +20,8 @@ export interface Finding {
   message: string;
   fix_suggestion: string;
   framework: string;
+  category: string;
+  mapped_frameworks: string[];
   compliance_mappings: ComplianceMapping[];
   risk_score: number;
   risk_justification: string;

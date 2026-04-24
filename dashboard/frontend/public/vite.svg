@@ -1,1 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <title>ComplianceAI icon</title>
+  <defs>
+    <linearGradient id="bgGradient" x1="36" y1="28" x2="220" y2="228" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22142E" />
+      <stop offset="0.58" stop-color="#361A3B" />
+      <stop offset="1" stop-color="#17283C" />
+    </linearGradient>
+    <radialGradient id="coralGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(74 68) rotate(49) scale(76)">
+      <stop offset="0" stop-color="#FF8A72" />
+      <stop offset="1" stop-color="#FF8A72" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="violetGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(188 66) rotate(149) scale(78)">
+      <stop offset="0" stop-color="#FF67B3" />
+      <stop offset="1" stop-color="#FF67B3" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="tealGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(184 192) rotate(114) scale(88)">
+      <stop offset="0" stop-color="#6DE5D3" />
+      <stop offset="1" stop-color="#6DE5D3" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="shieldGradient" x1="82" y1="56" x2="184" y2="202" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF9B73" />
+      <stop offset="0.5" stop-color="#FF5EA1" />
+      <stop offset="1" stop-color="#71E6D3" />
+    </linearGradient>
+    <linearGradient id="signalGradient" x1="88" y1="148" x2="165" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D6FFF8" />
+      <stop offset="1" stop-color="#6DE5D3" />
+    </linearGradient>
+    <linearGradient id="checkGradient" x1="104" y1="174" x2="160" y2="132" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF1C3" />
+      <stop offset="1" stop-color="#FFFFFF" />
+    </linearGradient>
+    <clipPath id="frameClip">
+      <rect x="16" y="16" width="224" height="224" rx="52" />
+    </clipPath>
+    <filter id="frameShadow" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#06030C" flood-opacity="0.34" />
+    </filter>
+    <filter id="shieldShadow" x="44" y="26" width="168" height="214" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0A0610" flood-opacity="0.34" />
+    </filter>
+  </defs>
+
+  <g filter="url(#frameShadow)">
+    <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#bgGradient)" />
+    <rect x="17" y="17" width="222" height="222" rx="51" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="2" />
+  </g>
+
+  <g clip-path="url(#frameClip)">
+    <circle cx="74" cy="68" r="74" fill="url(#coralGlow)" />
+    <circle cx="188" cy="66" r="76" fill="url(#violetGlow)" />
+    <circle cx="184" cy="192" r="84" fill="url(#tealGlow)" />
+    <path
+      d="M34 182C76 150 134 152 222 92"
+      stroke="#FFFFFF"
+      stroke-opacity="0.10"
+      stroke-width="8"
+      stroke-linecap="round"
+    />
+    <path
+      d="M26 214C84 176 162 178 236 124"
+      stroke="#FFFFFF"
+      stroke-opacity="0.06"
+      stroke-width="6"
+      stroke-linecap="round"
+    />
+  </g>
+
+  <g filter="url(#shieldShadow)">
+    <path
+      d="M128 38L188 60C194 62 198 67 198 73V118C198 171 168 208 128 227C88 208 58 171 58 118V73C58 67 62 62 68 60L128 38Z"
+      fill="url(#shieldGradient)"
+    />
+    <path
+      d="M128 56L174 74V117C174 156 151 184 128 198C105 184 82 156 82 117V74L128 56Z"
+      fill="#1B1426"
+      fill-opacity="0.26"
+    />
+    <path
+      d="M128 38L188 60C194 62 198 67 198 73V118C198 171 168 208 128 227C88 208 58 171 58 118V73C58 67 62 62 68 60L128 38Z"
+      stroke="#FFFFFF"
+      stroke-opacity="0.20"
+      stroke-width="3"
+    />
+  </g>
+
+  <path
+    d="M94 126L112 108L129 120L162 90"
+    stroke="url(#signalGradient)"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="94" cy="126" r="6" fill="#D6FFF8" />
+  <circle cx="112" cy="108" r="6" fill="#D6FFF8" />
+  <circle cx="129" cy="120" r="6" fill="#D6FFF8" />
+  <circle cx="162" cy="90" r="6" fill="#6DE5D3" />
+
+  <path
+    d="M102 156L121 175L156 136"
+    stroke="url(#checkGradient)"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

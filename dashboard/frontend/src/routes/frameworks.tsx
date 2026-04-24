@@ -55,7 +55,7 @@ function FrameworksPage() {
             {FW_LIST.map((fw) => {
               const score = frameworks?.[fw.key] ?? 100;
               const cnt = findings.filter(
-                (f) => f.framework && f.framework.toLowerCase().includes(fw.key),
+                (f) => f.mapped_frameworks.some((mapped) => mapped.toLowerCase().replace(/[-\s]/g, "") === fw.key),
               ).length;
               return (
                 <div key={fw.key}>

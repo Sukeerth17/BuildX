@@ -18,7 +18,7 @@ from reportlab.lib import colors
 from database import get_db
 from models import Finding
 from routers.frameworks import FRAMEWORKS
-from compliance_mapping import framework_matches, deserialize_mappings
+from compliance_mapping import build_framework_metrics, deserialize_mappings, framework_display_name
 
 router = APIRouter()
 
@@ -47,21 +47,17 @@ async def generate_audit_report(req: AuditRequest, db: Session = Depends(get_db)
     for f in findings:
         severity_counts[f.severity] = severity_counts.get(f.severity, 0) + 1
 
-    fw_compliance = {}
-    for fw in FRAMEWORKS:
-        fw_findings = [f for f in findings if f.framework and framework_matches(f.framework, fw)]
-        if not fw_findings:
-            fw_compliance[fw] = "100.0%"
-        else:
-            passed = sum(1 for f in fw_findings if f.status in ["fixed", "accepted"])
-            fw_compliance[fw] = f"{round((passed / len(fw_findings)) * 100, 1)}%"
+    framework_metrics = build_framework_metrics(findings)
 
     control_counts = {}
     for finding in findings:
         mappings = deserialize_mappings(finding.compliance_mappings)
         for m in mappings:
             ctrl = m.get("control", {})
-            clause = ctrl.get("clause", "Unknown")
+            clause = ctrl.get("clause")
+            if not clause or clause == "Unknown":
+                continue
+            
             framework = m.get("framework", "Unknown")
             key = f"{framework} - {clause}"
             if key not in control_counts:
@@ -73,11 +69,18 @@ async def generate_audit_report(req: AuditRequest, db: Session = Depends(get_db)
 
     top_controls = sorted(control_counts.items(), key=lambda x: x[1]["count"], reverse=True)[:6]
     control_summary_text = ", ".join([f"{k} ({v['count']})" for k, v in top_controls]) or "No mapped control data"
+    framework_summary_text = ", ".join(
+        [
+            f"{framework_display_name(fw)} {framework_metrics[fw]['score']:.1f}% across {framework_metrics[fw]['count']} finding(s)"
+            for fw in FRAMEWORKS
+        ]
+    )
 
     summary_text = f"CRITICAL: {severity_counts['CRITICAL']}, HIGH: {severity_counts['HIGH']}, MEDIUM: {severity_counts['MEDIUM']}, LOW: {severity_counts['LOW']}"
 
     prompt = f"""You are a DevOps compliance expert. Write a 300-500 word compliance narrative based on these findings from {req.start_date} to {req.end_date}:
 Severity Breakdown: {summary_text}
+Framework Coverage: {framework_summary_text}
 Top impacted controls: {control_summary_text}
 Include:
 1. Executive summary of the security posture
@@ -138,14 +141,19 @@ Do not include markdown formatting like ** or #. Keep it plain text."""
 
     # Framework Table
     story.append(Paragraph("Framework Compliance", styles['Heading2']))
-    fw_data = [["Framework", "Compliance %"]]
-    for k, v in fw_compliance.items():
-        fw_data.append([k.upper(), v])
+    fw_data = [["Framework", "Compliance %", "Mapped Findings"]]
+    for fw in FRAMEWORKS:
+        metrics = framework_metrics[fw]
+        fw_data.append([
+            framework_display_name(fw),
+            f"{metrics['score']:.1f}%",
+            str(metrics["count"]),
+        ])
         
-    t_fw = Table(fw_data, colWidths=[200, 100])
+    t_fw = Table(fw_data, colWidths=[200, 100, 100])
     t_fw.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (1,0), colors.grey),
-        ('TEXTCOLOR', (0,0), (1,0), colors.whitesmoke),
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('BOTTOMPADDING', (0,0), (-1,0), 12),
@@ -154,31 +162,48 @@ Do not include markdown formatting like ** or #. Keep it plain text."""
     ]))
     story.append(t_fw)
 
+    story.append(Spacer(1, 24))
+    story.append(Paragraph("Top Violated Control Clauses", styles['Heading2']))
+
     if top_controls:
-        story.append(Spacer(1, 24))
-        story.append(Paragraph("Top Violated Control Clauses", styles['Heading2']))
         
         # Use Paragraphs for wrapping in the third column
         control_data = [["Control Clause", "Findings", "Control Excerpt"]]
         style_wrapped = styles["Normal"]
-        style_wrapped.fontSize = 9
+        style_wrapped.fontSize = 8.5
+        style_wrapped.leading = 11
         
         for key, details in top_controls:
             excerpt_para = Paragraph(details["excerpt"] or "-", style_wrapped)
             control_data.append([key, str(details["count"]), excerpt_para])
 
-        t_controls = Table(control_data, colWidths=[150, 60, 270])
-        t_controls.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        t_controls = Table(control_data, colWidths=[150, 55, 305])
+        
+        table_styles = [
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#333333")),
             ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
             ('ALIGN', (1,1), (1,-1), 'CENTER'),
-            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 10),
             ('BOTTOMPADDING', (0,0), (-1,0), 10),
-            ('BACKGROUND', (0,1), (-1,-1), colors.beige),
-            ('GRID', (0,0), (-1,-1), 1, colors.black),
-        ]))
+            ('TOPPADDING', (0,0), (-1,0), 10),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('LEFTPADDING', (0,0), (-1,-1), 8),
+            ('RIGHTPADDING', (0,0), (-1,-1), 8),
+        ]
+        
+        # Alternate row shading
+        for i in range(1, len(control_data)):
+            if i % 2 == 0:
+                table_styles.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor("#f9f9f9")))
+            else:
+                table_styles.append(('BACKGROUND', (0, i), (-1, i), colors.whitesmoke))
+
+        t_controls.setStyle(TableStyle(table_styles))
         story.append(t_controls)
+    else:
+        story.append(Paragraph("No mapped control data available for this period.", styles['Normal']))
     
     story.append(Spacer(1, 48))
     story.append(Paragraph(f"Generated at: {datetime.utcnow().isoformat()} UTC", styles['Italic']))

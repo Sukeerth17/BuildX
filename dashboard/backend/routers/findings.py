@@ -10,11 +10,19 @@ from models import Finding
 from routers.auth import get_current_user
 from websocket_manager import manager
 from cache import get_cache, set_cache, invalidate_pattern
-from compliance_mapping import get_comprehensive_mapping, deserialize_mappings, serialize_mappings, framework_matches
+from compliance_mapping import (
+    deserialize_mappings,
+    finding_matches_framework,
+    get_category_label,
+    get_comprehensive_mapping,
+    get_mapped_framework_names,
+    serialize_mappings,
+)
 
 router = APIRouter()
 
 def _finding_to_dict(f: Finding) -> Dict[str, Any]:
+    mappings = deserialize_mappings(f.compliance_mappings)
     return {
         "id": f.id,
         "repo": f.repo,
@@ -26,7 +34,9 @@ def _finding_to_dict(f: Finding) -> Dict[str, Any]:
         "fix_suggestion": f.fix_suggestion,
         "plain_english": f.plain_english,
         "framework": f.framework,
-        "compliance_mappings": deserialize_mappings(f.compliance_mappings),
+        "category": get_category_label(f.framework, f.rule_id, f.message, f.fix_suggestion),
+        "mapped_frameworks": get_mapped_framework_names(mappings, f.framework),
+        "compliance_mappings": mappings,
         "risk_score": f.risk_score,
         "risk_justification": f.risk_justification,
         "scanner": f.scanner,
@@ -134,11 +144,11 @@ def get_findings(
         query = query.filter(Finding.status == status)
     if repo:
         query = query.filter(Finding.repo == repo)
-        
+    
     findings = query.order_by(Finding.id.desc()).all()
     
     if framework:
-        findings = [f for f in findings if framework_matches(f.framework, framework)]
+        findings = [f for f in findings if finding_matches_framework(f.framework, f.compliance_mappings, framework)]
     
     result = [_finding_to_dict(f) for f in findings]
     set_cache(cache_key, result, ttl=60)

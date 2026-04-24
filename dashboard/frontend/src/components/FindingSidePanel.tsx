@@ -100,7 +100,7 @@ export default function FindingSidePanel({ finding, onClose }: Props) {
               color: "var(--color-accent)",
             }}
           >
-            {finding.framework}
+            {finding.category}
           </span>
           <span
             style={{
@@ -122,6 +122,36 @@ export default function FindingSidePanel({ finding, onClose }: Props) {
           <span style={{ fontFamily: "monospace" }}>
             {finding.repo}/{finding.file_path}:{finding.line_number}
           </span>
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <strong style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-accent)" }}>
+            Impacted Frameworks
+          </strong>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+            {finding.mapped_frameworks.length > 0 ? (
+              finding.mapped_frameworks.map((framework) => (
+                <span
+                  key={framework}
+                  style={{
+                    background: "oklch(1 0 0 / 0.08)",
+                    border: "1px solid var(--glass-border)",
+                    padding: "6px 10px",
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  {framework}
+                </span>
+              ))
+            ) : (
+              <span style={{ fontSize: 13, color: "var(--color-muted-foreground)" }}>
+                No mapped regulations available yet.
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="glass" style={{ padding: 16, marginBottom: 18, borderLeft: "4px solid var(--color-accent)" }}>

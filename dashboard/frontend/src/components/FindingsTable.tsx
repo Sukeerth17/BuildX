@@ -72,7 +72,8 @@ export default function FindingsTable({ findings, onRowClick }: Props) {
             <th style={{ padding: "12px 8px", fontWeight: 600 }}>Rule</th>
             <th style={{ padding: "12px 8px", fontWeight: 600 }}>File</th>
             <th style={{ padding: "12px 8px", fontWeight: 600 }}>Line</th>
-            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Framework</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Category</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Regulations</th>
             <th style={{ padding: "12px 8px", fontWeight: 600 }}>Repo</th>
             <th style={{ padding: "12px 8px", fontWeight: 600 }}>Status</th>
           </tr>
@@ -100,7 +101,10 @@ export default function FindingsTable({ findings, onRowClick }: Props) {
                 {f.file_path.length > 30 ? "…" + f.file_path.slice(-27) : f.file_path}
               </td>
               <td style={{ padding: "12px 8px", color: "var(--color-muted-foreground)" }}>{f.line_number}</td>
-              <td style={{ padding: "12px 8px", fontSize: 12, textTransform: "uppercase" }}>{f.framework}</td>
+              <td style={{ padding: "12px 8px", fontSize: 12, fontWeight: 600 }}>{f.category}</td>
+              <td style={{ padding: "12px 8px", fontSize: 12, color: "var(--color-muted-foreground)" }}>
+                {f.mapped_frameworks.length > 0 ? f.mapped_frameworks.join(", ") : "Unmapped"}
+              </td>
               <td style={{ padding: "12px 8px" }}>{f.repo}</td>
               <td style={{ padding: "12px 8px" }}>
                 <StatusPill status={f.status} />
@@ -109,7 +113,7 @@ export default function FindingsTable({ findings, onRowClick }: Props) {
           ))}
           {findings.length === 0 && (
             <tr>
-              <td colSpan={7} style={{ textAlign: "center", padding: 32, color: "var(--color-muted-foreground)" }}>
+              <td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--color-muted-foreground)" }}>
                 No findings match the current filters.
               </td>
             </tr>

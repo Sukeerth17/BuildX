@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import SessionLocal
 from models import FrameworkSnapshot, Finding
+from compliance_mapping import FRAMEWORK_KEY_ORDER, build_framework_metrics
 
 # Optional: configure celery to use Redis as broker
 celery_app = Celery("tasks", broker=os.getenv("REDIS_URL", "redis://localhost:6379"))
@@ -17,16 +18,8 @@ def generate_nightly_snapshot():
     db = SessionLocal()
     try:
         all_findings = db.query(Finding).all()
-        FRAMEWORKS = ["soc2", "gdpr", "hipaa", "pcidss", "owasp", "iso27001"]
-        results = {}
-        
-        for fw in FRAMEWORKS:
-            fw_findings = [f for f in all_findings if f.framework and fw.lower() in f.framework.lower()]
-            if not fw_findings:
-                results[fw] = 100.0
-            else:
-                passed = sum(1 for f in fw_findings if f.status in ["fixed", "accepted"])
-                results[fw] = round((passed / len(fw_findings)) * 100, 1)
+        metrics = build_framework_metrics(all_findings)
+        results = {fw: metrics[fw]["score"] for fw in FRAMEWORK_KEY_ORDER}
 
         snapshot = FrameworkSnapshot(
             snapshot_date=datetime.utcnow().date(),

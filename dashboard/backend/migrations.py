@@ -29,17 +29,39 @@ def run_migrations():
             conn.execute(text("ALTER TABLE findings ADD COLUMN risk_justification TEXT"))
             conn.commit()
 
+        # Add scanner if missing
+        if "scanner" not in columns:
+            print("[migration] Adding scanner column...")
+            conn.execute(text("ALTER TABLE findings ADD COLUMN scanner VARCHAR(50) DEFAULT 'unknown'"))
+            conn.commit()
+
+        # Add plain_english if missing
+        if "plain_english" not in columns:
+            print("[migration] Adding plain_english column...")
+            conn.execute(text("ALTER TABLE findings ADD COLUMN plain_english TEXT DEFAULT ''"))
+            conn.commit()
+
+        # Add is_false_positive if missing
+        if "is_false_positive" not in columns:
+            print("[migration] Adding is_false_positive column...")
+            conn.execute(text("ALTER TABLE findings ADD COLUMN is_false_positive INTEGER DEFAULT 0"))
+            conn.commit()
+
 def backfill_legacy_findings():
     from database import SessionLocal
     from models import Finding
     
     db = SessionLocal()
     try:
+        # Re-map if mappings are missing, empty, or if risk metadata is missing
         findings = db.query(Finding).filter(
-            (Finding.compliance_mappings == None) | (Finding.risk_score == 0)
+            (Finding.compliance_mappings == None) | 
+            (Finding.compliance_mappings == "[]") | 
+            (Finding.risk_score == 0)
         ).all()
         
         if not findings:
+            print("[backfill] No findings require enrichment.")
             return
             
         print(f"[backfill] Found {len(findings)} legacy findings to enrich.")

@@ -5,10 +5,11 @@ from typing import Dict, Any
 from database import get_db
 from models import Finding, FrameworkSnapshot
 from cache import get_cache, set_cache
+from compliance_mapping import FRAMEWORK_KEY_ORDER, build_framework_metrics
 
 router = APIRouter()
 
-FRAMEWORKS = ["soc2", "gdpr", "hipaa", "pcidss", "owasp", "iso27001"]
+FRAMEWORKS = FRAMEWORK_KEY_ORDER
 
 @router.get("")
 def get_frameworks(db: Session = Depends(get_db)):
@@ -18,15 +19,8 @@ def get_frameworks(db: Session = Depends(get_db)):
         return cached
 
     all_findings = db.query(Finding).all()
-    results = {}
-    
-    for fw in FRAMEWORKS:
-        fw_findings = [f for f in all_findings if f.framework and fw.lower() in f.framework.lower()]
-        if not fw_findings:
-            results[fw] = 100.0
-        else:
-            passed = sum(1 for f in fw_findings if f.status in ["fixed", "accepted"])
-            results[fw] = round((passed / len(fw_findings)) * 100, 1)
+    metrics = build_framework_metrics(all_findings)
+    results = {fw: metrics[fw]["score"] for fw in FRAMEWORKS}
 
     set_cache(cache_key, results, ttl=60)
     return results

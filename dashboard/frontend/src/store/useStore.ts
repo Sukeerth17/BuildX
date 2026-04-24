@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export interface Finding {
   id: number;
@@ -50,14 +50,16 @@ interface AppStore {
   updateFindingOptimistically: (id: number, status: string) => void;
 }
 
+const isBrowser = typeof window !== "undefined";
+
 export const useStore = create<AppStore>((set) => ({
-  token: localStorage.getItem('compliance_token'),
+  token: isBrowser ? localStorage.getItem("compliance_token") : null,
   setToken: (token) => {
-    localStorage.setItem('compliance_token', token);
+    if (isBrowser) localStorage.setItem("compliance_token", token);
     set({ token });
   },
   logout: () => {
-    localStorage.removeItem('compliance_token');
+    if (isBrowser) localStorage.removeItem("compliance_token");
     set({ token: null });
   },
 
@@ -71,7 +73,8 @@ export const useStore = create<AppStore>((set) => ({
   setSummary: (summary) => set({ summary }),
   setTrend: (trend) => set({ trend }),
   setFrameworks: (frameworks) => set({ frameworks }),
-  updateFindingOptimistically: (id, status) => set((state) => ({
-    findings: state.findings.map(f => f.id === id ? { ...f, status } : f)
-  }))
+  updateFindingOptimistically: (id, status) =>
+    set((state) => ({
+      findings: state.findings.map((f) => (f.id === id ? { ...f, status } : f)),
+    })),
 }));

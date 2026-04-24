@@ -1,72 +1,83 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useStore } from '../store/useStore';
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useStore } from "../store/useStore";
+
+const navItems = [
+  { path: "/", label: "Overview" },
+  { path: "/findings", label: "Findings" },
+  { path: "/frameworks", label: "Frameworks" },
+  { path: "/chat", label: "AI Chat" },
+  { path: "/audit", label: "Audit Report" },
+] as const;
 
 export default function Navbar() {
   const location = useLocation();
-  const logout = useStore((state) => state.logout);
-
-  const navItems = [
-    { path: '/', label: 'Overview' },
-    { path: '/findings', label: 'Findings' },
-    { path: '/frameworks', label: 'Frameworks' },
-    { path: '/chat', label: 'AI Chat' },
-    { path: '/audit', label: 'Audit Report' },
-  ];
+  const navigate = useNavigate();
+  const logout = useStore((s) => s.logout);
 
   return (
-    <nav style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '64px',
-      background: 'var(--bg-panel)',
-      backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid var(--glass-border)',
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 24px',
-      zIndex: 1000,
-      justifyContent: 'space-between'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', color: 'white', fontWeight: 'bold' }}>
-          <span style={{ color: 'var(--accent-blue)' }}>Compliance</span>AI
+    <nav
+      className="glass-strong"
+      style={{
+        position: "fixed",
+        top: 16,
+        left: 16,
+        right: 16,
+        height: 64,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 20px",
+        zIndex: 1000,
+        justifyContent: "space-between",
+        borderRadius: 18,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>
+          <span
+            style={{
+              background: "linear-gradient(135deg, var(--color-primary), var(--color-accent))",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Compliance
+          </span>
+          <span style={{ color: "var(--color-foreground)" }}>AI</span>
         </h1>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          {navItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              style={{
-                color: location.pathname === item.path ? 'white' : 'var(--text-muted)',
-                fontWeight: location.pathname === item.path ? 'bold' : 'normal',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                background: location.pathname === item.path ? 'rgba(255,255,255,0.1)' : 'transparent',
-                transition: 'all 0.2s'
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div style={{ display: "flex", gap: 4 }}>
+          {navItems.map((item) => {
+            const active = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                style={{
+                  color: active ? "var(--color-foreground)" : "var(--color-muted-foreground)",
+                  fontWeight: active ? 600 : 500,
+                  fontSize: 14,
+                  padding: "8px 14px",
+                  borderRadius: 10,
+                  background: active ? "oklch(1 0 0 / 0.12)" : "transparent",
+                  border: active ? "1px solid var(--glass-border)" : "1px solid transparent",
+                  transition: "all 0.2s",
+                  textDecoration: "none",
+                }}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
-      <div>
-        <button
-          onClick={logout}
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-muted)',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          Logout
-        </button>
-      </div>
+      <button
+        onClick={() => {
+          logout();
+          navigate({ to: "/login" });
+        }}
+        className="glass-button-ghost"
+      >
+        Logout
+      </button>
     </nav>
   );
 }

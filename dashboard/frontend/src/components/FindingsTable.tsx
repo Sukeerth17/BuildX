@@ -1,99 +1,115 @@
+import type { Finding } from "../store/useStore";
 
-import type { Finding } from '../store/useStore';
-
-interface FindingsTableProps {
+interface Props {
   findings: Finding[];
-  onRowClick: (finding: Finding) => void;
+  onRowClick: (f: Finding) => void;
 }
 
-export default function FindingsTable({ findings, onRowClick }: FindingsTableProps) {
-  const getSeverityBadge = (sev: string) => {
-    let color = 'var(--low-blue)';
-    if (sev === 'CRITICAL') color = 'var(--critical-red)';
-    if (sev === 'HIGH') color = 'var(--high-orange)';
-    if (sev === 'MEDIUM') color = 'var(--medium-yellow)';
-    
-    return (
-      <span style={{
-        background: color,
-        color: 'white',
-        padding: '2px 8px',
-        borderRadius: '12px',
-        fontSize: '12px',
-        fontWeight: 'bold'
-      }}>
-        {sev}
-      </span>
-    );
-  };
+const sevColor = (s: string) => {
+  if (s === "CRITICAL") return "var(--sev-critical)";
+  if (s === "HIGH") return "var(--sev-high)";
+  if (s === "MEDIUM") return "var(--sev-medium)";
+  return "var(--sev-low)";
+};
 
-  const getStatusPill = (status: string) => {
-    let bg = 'rgba(255,255,255,0.1)';
-    let color = 'var(--text-muted)';
-    if (status === 'fixed') {
-      bg = 'rgba(34, 197, 94, 0.2)';
-      color = 'var(--success-green)';
-    }
-    if (status === 'accepted') {
-      bg = 'rgba(168, 85, 247, 0.2)';
-      color = '#a855f7';
-    }
-    
-    return (
-      <span style={{
-        background: bg,
-        color: color,
-        padding: '2px 8px',
-        borderRadius: '12px',
-        fontSize: '12px',
-        textTransform: 'capitalize'
-      }}>
-        {status}
-      </span>
-    );
-  };
-
+function SeverityBadge({ sev }: { sev: string }) {
+  const c = sevColor(sev);
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+    <span
+      style={{
+        background: `color-mix(in oklab, ${c} 25%, transparent)`,
+        color: c,
+        border: `1px solid color-mix(in oklab, ${c} 50%, transparent)`,
+        padding: "3px 10px",
+        borderRadius: 999,
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.04em",
+      }}
+    >
+      {sev}
+    </span>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  let c = "oklch(0.82 0.03 90)";
+  if (status === "fixed") c = "var(--success)";
+  if (status === "accepted") c = "var(--color-accent)";
+  return (
+    <span
+      style={{
+        background: `color-mix(in oklab, ${c} 18%, transparent)`,
+        color: c,
+        border: `1px solid color-mix(in oklab, ${c} 40%, transparent)`,
+        padding: "3px 10px",
+        borderRadius: 999,
+        fontSize: 11,
+        textTransform: "capitalize",
+        fontWeight: 600,
+      }}
+    >
+      {status}
+    </span>
+  );
+}
+
+export default function FindingsTable({ findings, onRowClick }: Props) {
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
-          <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-            <th style={{ padding: '12px 8px' }}>Severity</th>
-            <th style={{ padding: '12px 8px' }}>Rule ID</th>
-            <th style={{ padding: '12px 8px' }}>File</th>
-            <th style={{ padding: '12px 8px' }}>Line</th>
-            <th style={{ padding: '12px 8px' }}>Framework</th>
-            <th style={{ padding: '12px 8px' }}>Repo</th>
-            <th style={{ padding: '12px 8px' }}>Status</th>
+          <tr
+            style={{
+              borderBottom: "1px solid var(--glass-border)",
+              color: "var(--color-muted-foreground)",
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Severity</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Rule</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>File</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Line</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Framework</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Repo</th>
+            <th style={{ padding: "12px 8px", fontWeight: 600 }}>Status</th>
           </tr>
         </thead>
         <tbody>
-          {findings.map(f => (
-            <tr 
-              key={f.id} 
+          {findings.map((f) => (
+            <tr
+              key={f.id}
               onClick={() => onRowClick(f)}
-              style={{ 
-                borderBottom: '1px solid var(--border-color)', 
-                cursor: 'pointer',
-                transition: 'background 0.2s'
+              style={{
+                borderBottom: "1px solid oklch(1 0 0 / 0.06)",
+                cursor: "pointer",
+                transition: "background 0.15s",
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "oklch(1 0 0 / 0.05)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
-              <td style={{ padding: '12px 8px' }}>{getSeverityBadge(f.severity)}</td>
-              <td style={{ padding: '12px 8px', fontWeight: 'bold' }}>{f.rule_id}</td>
-              <td style={{ padding: '12px 8px' }} title={f.file_path}>
-                {f.file_path.length > 30 ? '...' + f.file_path.substring(f.file_path.length - 27) : f.file_path}
+              <td style={{ padding: "12px 8px" }}>
+                <SeverityBadge sev={f.severity} />
               </td>
-              <td style={{ padding: '12px 8px' }}>{f.line_number}</td>
-              <td style={{ padding: '12px 8px', fontSize: '12px' }}>{f.framework}</td>
-              <td style={{ padding: '12px 8px' }}>{f.repo}</td>
-              <td style={{ padding: '12px 8px' }}>{getStatusPill(f.status)}</td>
+              <td style={{ padding: "12px 8px", fontWeight: 600, fontFamily: "monospace" }}>
+                {f.rule_id}
+              </td>
+              <td style={{ padding: "12px 8px", fontFamily: "monospace", fontSize: 12 }} title={f.file_path}>
+                {f.file_path.length > 30 ? "…" + f.file_path.slice(-27) : f.file_path}
+              </td>
+              <td style={{ padding: "12px 8px", color: "var(--color-muted-foreground)" }}>{f.line_number}</td>
+              <td style={{ padding: "12px 8px", fontSize: 12, textTransform: "uppercase" }}>{f.framework}</td>
+              <td style={{ padding: "12px 8px" }}>{f.repo}</td>
+              <td style={{ padding: "12px 8px" }}>
+                <StatusPill status={f.status} />
+              </td>
             </tr>
           ))}
           {findings.length === 0 && (
             <tr>
-              <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+              <td colSpan={7} style={{ textAlign: "center", padding: 32, color: "var(--color-muted-foreground)" }}>
                 No findings match the current filters.
               </td>
             </tr>

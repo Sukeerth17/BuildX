@@ -1,87 +1,84 @@
-import { useEffect, useState } from 'react';
-import { useStore } from '../store/useStore';
-import type { Finding } from '../store/useStore';
+import { useEffect, useState } from "react";
+import { useStore } from "../store/useStore";
+import type { Finding } from "../store/useStore";
 
 interface Toast {
   id: number;
   finding: Finding;
 }
 
+const sevColor = (s: string) => {
+  if (s === "CRITICAL") return "var(--sev-critical)";
+  if (s === "HIGH") return "var(--sev-high)";
+  if (s === "MEDIUM") return "var(--sev-medium)";
+  return "var(--sev-low)";
+};
+
+const SAMPLE_REPOS = ["payments-api", "auth-service", "web-frontend"];
+const SAMPLE_FILES = ["src/handlers/checkout.ts", "internal/auth/middleware.go", "lib/db/queries.ts"];
+const SAMPLE_SEV = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+
 export default function LiveFeedToast() {
-  const addFinding = useStore((state) => state.addFinding);
+  const addFinding = useStore((s) => s.addFinding);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   useEffect(() => {
-    let ws: WebSocket;
-    let reconnectTimer: any;
-
-    const connect = () => {
-      ws = new WebSocket('ws://localhost:8000/ws/live');
-
-      ws.onopen = () => {
-        console.log('Connected to Live WebSocket');
+    // Simulated live feed (no backend WebSocket available in preview).
+    const interval = setInterval(() => {
+      const sev = SAMPLE_SEV[Math.floor(Math.random() * SAMPLE_SEV.length)];
+      const finding: Finding = {
+        id: Date.now(),
+        repo: SAMPLE_REPOS[Math.floor(Math.random() * SAMPLE_REPOS.length)],
+        file_path: SAMPLE_FILES[Math.floor(Math.random() * SAMPLE_FILES.length)],
+        line_number: Math.floor(Math.random() * 200) + 1,
+        rule_id: "SEC-" + Math.floor(Math.random() * 999).toString().padStart(3, "0"),
+        severity: sev,
+        message: "New finding detected by live scanner",
+        fix_suggestion: "// Apply secure pattern",
+        framework: "soc2",
+        commit_sha: "abcd123",
+        status: "open",
+        created_at: new Date().toISOString(),
       };
+      addFinding(finding);
+      const toast: Toast = { id: finding.id, finding };
+      setToasts((prev) => [...prev, toast]);
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toast.id)), 4500);
+    }, 18000);
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.event === 'new_finding') {
-            const finding: Finding = data.data;
-            addFinding(finding);
-            
-            const newToast: Toast = { id: Date.now(), finding };
-            setToasts(prev => [...prev, newToast]);
-            
-            setTimeout(() => {
-              setToasts(prev => prev.filter(t => t.id !== newToast.id));
-            }, 4000);
-          }
-        } catch (e) {
-          console.error('WebSocket parse error', e);
-        }
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket closed, attempting to reconnect...');
-        reconnectTimer = setTimeout(connect, 3000);
-      };
-    };
-
-    connect();
-
-    return () => {
-      clearTimeout(reconnectTimer);
-      if (ws) ws.close();
-    };
+    return () => clearInterval(interval);
   }, [addFinding]);
-
-  const getSeverityColor = (sev: string) => {
-    if (sev === 'CRITICAL') return 'var(--critical-red)';
-    if (sev === 'HIGH') return 'var(--high-orange)';
-    if (sev === 'MEDIUM') return 'var(--medium-yellow)';
-    return 'var(--low-blue)';
-  };
 
   if (toasts.length === 0) return null;
 
   return (
-    <div style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {toasts.map(toast => (
+    <div
+      style={{
+        position: "fixed",
+        top: 96,
+        right: 24,
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
+      {toasts.map((t) => (
         <div
-          key={toast.id}
-          className="glass slide-in"
+          key={t.id}
+          className="glass-strong slide-in"
           style={{
-            padding: '16px',
-            width: '320px',
-            borderLeft: `4px solid ${getSeverityColor(toast.finding.severity)}`,
-            background: 'var(--bg-card)'
+            padding: 14,
+            width: 320,
+            borderLeft: `3px solid ${sevColor(t.finding.severity)}`,
+            borderRadius: 14,
           }}
         >
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-            New {toast.finding.severity} finding
+          <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13 }}>
+            New {t.finding.severity} finding
           </div>
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-            in {toast.finding.repo} ({toast.finding.file_path})
+          <div style={{ fontSize: 12, color: "var(--color-muted-foreground)" }}>
+            {t.finding.repo} · <span style={{ fontFamily: "monospace" }}>{t.finding.file_path}</span>
           </div>
         </div>
       ))}

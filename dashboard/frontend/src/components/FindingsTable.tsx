@@ -1,5 +1,5 @@
-import React from 'react';
-import { Finding } from '../store/useStore';
+
+import type { Finding } from '../store/useStore';
 
 interface FindingsTableProps {
   findings: Finding[];

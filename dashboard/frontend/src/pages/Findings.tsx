@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useStore, Finding } from '../store/useStore';
+import { useStore } from '../store/useStore';
+import type { Finding } from '../store/useStore';
 import { getFindings } from '../api/client';
 import FindingsTable from '../components/FindingsTable';
 import FindingSidePanel from '../components/FindingSidePanel';

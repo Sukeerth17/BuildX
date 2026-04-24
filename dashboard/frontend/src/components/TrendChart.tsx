@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -36,7 +36,7 @@ export default function TrendChart({ data }: TrendChartProps) {
         data: data.map(d => d.pass_rate),
         borderColor: (context: any) => {
           const chart = context.chart;
-          const { ctx, chartArea } = chart;
+          const { chartArea } = chart;
           if (!chartArea) return 'var(--accent-blue)';
           
           // Color based on value? The prompt says: "Color the line green when above 85%, red when below"

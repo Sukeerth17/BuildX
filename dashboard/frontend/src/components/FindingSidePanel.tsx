@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Finding, useStore } from '../store/useStore';
+import { useState } from 'react';
+import { useStore } from '../store/useStore';
+import type { Finding } from '../store/useStore';
 import { updateFindingStatus } from '../api/client';
 
 interface FindingSidePanelProps {

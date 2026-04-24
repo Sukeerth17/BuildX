@@ -13,6 +13,9 @@ class Finding(Base):
     message = Column(Text)
     fix_suggestion = Column(Text)
     framework = Column(String(255), index=True)
+    compliance_mappings = Column(Text)  # Structured JSON payload
+    risk_score = Column(Integer, default=0)
+    risk_justification = Column(Text)
     commit_sha = Column(String(40), index=True)
     scanner = Column(String(50), default="unknown", index=True)
     plain_english = Column(Text, default="")

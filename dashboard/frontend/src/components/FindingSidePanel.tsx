@@ -74,16 +74,16 @@ export default function FindingSidePanel({ finding, onClose }: Props) {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
           <span
             style={{
               background: `color-mix(in oklab, ${c} 25%, transparent)`,
               color: c,
               border: `1px solid color-mix(in oklab, ${c} 50%, transparent)`,
-              padding: "4px 10px",
+              padding: "4px 12px",
               borderRadius: 999,
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 800,
             }}
           >
             {finding.severity}
@@ -92,13 +92,28 @@ export default function FindingSidePanel({ finding, onClose }: Props) {
             style={{
               background: "oklch(1 0 0 / 0.08)",
               border: "1px solid var(--glass-border)",
-              padding: "4px 10px",
+              padding: "4px 12px",
               borderRadius: 999,
               fontSize: 11,
               textTransform: "uppercase",
+              fontWeight: 600,
+              color: "var(--color-accent)",
             }}
           >
             {finding.framework}
+          </span>
+          <span
+            style={{
+              background: `oklch(from var(--sev-critical) calc(l + (1 - ${finding.risk_score/100}) * 0.3) c h / 0.2)`,
+              border: `1px solid oklch(from var(--sev-critical) l c h / 0.4)`,
+              color: "white",
+              padding: "4px 12px",
+              borderRadius: 999,
+              fontSize: 11,
+              fontWeight: 800,
+            }}
+          >
+            RISK: {finding.risk_score}/100
           </span>
         </div>
 
@@ -109,12 +124,55 @@ export default function FindingSidePanel({ finding, onClose }: Props) {
           </span>
         </div>
 
-        <div className="glass" style={{ padding: 16, marginBottom: 18 }}>
-          <strong style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--color-muted-foreground)" }}>
-            Description
+        <div className="glass" style={{ padding: 16, marginBottom: 18, borderLeft: "4px solid var(--color-accent)" }}>
+          <strong style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-accent)" }}>
+            Compliance Violation Details
           </strong>
-          <p style={{ margin: "8px 0 0 0", fontSize: 14 }}>{finding.message}</p>
+          <p style={{ margin: "8px 0 0 0", fontSize: 14, lineHeight: 1.5 }}>{finding.message}</p>
         </div>
+
+        {finding.plain_english && (
+          <div className="glass" style={{ padding: 16, marginBottom: 18, borderLeft: "4px solid var(--success)" }}>
+            <strong style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--success)" }}>
+              Plain English Explanation
+            </strong>
+            <p style={{ margin: "8px 0 0 0", fontSize: 14, lineHeight: 1.5 }}>{finding.plain_english}</p>
+          </div>
+        )}
+
+        <div style={{ marginBottom: 18 }}>
+          <strong style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-accent)" }}>
+            Mapped Regulatory Controls
+          </strong>
+          {finding.compliance_mappings?.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+              {finding.compliance_mappings.map((m, idx) => (
+                <div key={`${m.framework}-${m.control.clause}-${idx}`} className="glass" style={{ padding: 12, borderLeft: "3px solid var(--color-accent)" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+                    {m.framework} · {m.control.clause}
+                  </div>
+                  <div style={{ fontSize: 12, lineHeight: 1.45 }}>{m.control.excerpt}</div>
+                  <div style={{ fontSize: 11, marginTop: 6, color: "var(--color-muted-foreground)" }}>
+                    Confidence {Math.round((m.confidence || 0) * 100)}% · {m.control.rationale}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "var(--color-muted-foreground)" }}>
+              No explicit control mapping data available for this finding.
+            </p>
+          )}
+        </div>
+
+        {finding.risk_justification && (
+          <div style={{ marginBottom: 18, fontSize: 13, padding: "0 4px" }}>
+            <strong style={{ color: "var(--color-muted-foreground)", textTransform: "uppercase", fontSize: 11, letterSpacing: "0.06em" }}>Risk Analysis</strong>
+            <p style={{ margin: "6px 0 0 0", fontStyle: "italic", color: "oklch(0.9 0.02 240)" }}>
+              "{finding.risk_justification}"
+            </p>
+          </div>
+        )}
 
         <div style={{ marginBottom: 18 }}>
           <strong style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--color-muted-foreground)" }}>
@@ -137,21 +195,6 @@ export default function FindingSidePanel({ finding, onClose }: Props) {
           </pre>
         </div>
 
-        <div style={{ marginBottom: 18, fontSize: 13 }}>
-          <strong style={{ color: "var(--color-muted-foreground)" }}>Commit:</strong>{" "}
-          <code
-            style={{
-              background: "oklch(1 0 0 / 0.08)",
-              padding: "4px 10px",
-              borderRadius: 6,
-              marginLeft: 4,
-              fontSize: 12,
-            }}
-          >
-            {finding.commit_sha.slice(0, 10)}
-          </code>
-        </div>
-
         <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: 20, marginTop: 24 }}>
           <label style={{ display: "block", marginBottom: 8, fontSize: 12, color: "var(--color-muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Status
@@ -167,29 +210,6 @@ export default function FindingSidePanel({ finding, onClose }: Props) {
             <option value="fixed">Fixed</option>
             <option value="accepted">Accepted (Risk)</option>
           </select>
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={() => handleStatusChange("fixed")}
-              disabled={loading || finding.status === "fixed"}
-              className="glass-button"
-              style={{
-                flex: 1,
-                background: "linear-gradient(135deg, var(--success), oklch(0.78 0.13 180))",
-                boxShadow: "0 6px 20px -8px oklch(0.78 0.16 155 / 0.7)",
-              }}
-            >
-              Mark Fixed
-            </button>
-            <button
-              onClick={() => handleStatusChange("accepted")}
-              disabled={loading || finding.status === "accepted"}
-              className="glass-button-ghost"
-              style={{ flex: 1, color: "var(--color-accent)", borderColor: "var(--color-accent)" }}
-            >
-              Accept Risk
-            </button>
-          </div>
         </div>
       </div>
     </>

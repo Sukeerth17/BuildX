@@ -3,14 +3,38 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta, date
+import json
 
 from database import get_db
 from models import Finding
 from routers.auth import get_current_user
 from websocket_manager import manager
 from cache import get_cache, set_cache, invalidate_pattern
+from compliance_mapping import get_comprehensive_mapping, deserialize_mappings, serialize_mappings, framework_matches
 
 router = APIRouter()
+
+def _finding_to_dict(f: Finding) -> Dict[str, Any]:
+    return {
+        "id": f.id,
+        "repo": f.repo,
+        "file_path": f.file_path,
+        "line_number": f.line_number,
+        "rule_id": f.rule_id,
+        "severity": f.severity,
+        "message": f.message,
+        "fix_suggestion": f.fix_suggestion,
+        "plain_english": f.plain_english,
+        "framework": f.framework,
+        "compliance_mappings": deserialize_mappings(f.compliance_mappings),
+        "risk_score": f.risk_score,
+        "risk_justification": f.risk_justification,
+        "scanner": f.scanner,
+        "is_false_positive": f.is_false_positive,
+        "commit_sha": f.commit_sha,
+        "status": f.status,
+        "created_at": f.created_at.isoformat()
+    }
 
 @router.post("")
 async def create_findings(body: Dict[Any, Any], db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
@@ -39,10 +63,12 @@ async def create_findings(body: Dict[Any, Any], db: Session = Depends(get_db), c
                 props = result.get("properties", {})
                 severity = props.get("severity", "LOW")
                 fix_suggestion = props.get("fix", "")
-                framework = props.get("framework", "")
                 scanner = props.get("scanner", "unknown")
                 plain_english = props.get("plain_english", "")
                 is_false_positive = 1 if props.get("is_false_positive", False) else 0
+
+                # Unified mapping engine
+                mapping_data = get_comprehensive_mapping(rule_id, message, severity, fix_suggestion)
 
                 # Parse repo name from file_path (first segment)
                 repo = "unknown"
@@ -59,7 +85,10 @@ async def create_findings(body: Dict[Any, Any], db: Session = Depends(get_db), c
                     severity=severity,
                     message=message,
                     fix_suggestion=fix_suggestion,
-                    framework=framework,
+                    framework=mapping_data["category"],
+                    compliance_mappings=serialize_mappings(mapping_data["mappings"]),
+                    risk_score=mapping_data["risk_score"],
+                    risk_justification=mapping_data["risk_justification"],
                     commit_sha=commit_sha,
                     scanner=scanner,
                     plain_english=plain_english,
@@ -71,30 +100,11 @@ async def create_findings(body: Dict[Any, Any], db: Session = Depends(get_db), c
                 count += 1
                 
                 # Broadcast
-                finding_dict = {
-                    "id": new_finding.id,
-                    "repo": new_finding.repo,
-                    "file_path": new_finding.file_path,
-                    "line_number": new_finding.line_number,
-                    "rule_id": new_finding.rule_id,
-                    "severity": new_finding.severity,
-                    "message": new_finding.message,
-                    "fix_suggestion": new_finding.fix_suggestion,
-                    "plain_english": new_finding.plain_english,
-                    "framework": new_finding.framework,
-                    "scanner": new_finding.scanner,
-                    "is_false_positive": new_finding.is_false_positive,
-                    "commit_sha": new_finding.commit_sha,
-                    "status": new_finding.status,
-                    "created_at": new_finding.created_at.isoformat()
-                }
-                await manager.broadcast({"event": "new_finding", "data": finding_dict})
+                await manager.broadcast({"event": "new_finding", "data": _finding_to_dict(new_finding)})
             except Exception as e:
-                # Skip malformed results
                 db.rollback()
                 pass
         
-        # Invalidate cache
         invalidate_pattern("complianceai:findings:*")
         invalidate_pattern("complianceai:summary")
         invalidate_pattern("complianceai:trend")
@@ -124,32 +134,13 @@ def get_findings(
         query = query.filter(Finding.status == status)
     if repo:
         query = query.filter(Finding.repo == repo)
-    if framework:
-        query = query.filter(Finding.framework.ilike(f"%{framework}%"))
         
-    # Order by newest
     findings = query.order_by(Finding.id.desc()).all()
     
-    result = []
-    for f in findings:
-        result.append({
-            "id": f.id,
-            "repo": f.repo,
-            "file_path": f.file_path,
-            "line_number": f.line_number,
-            "rule_id": f.rule_id,
-            "severity": f.severity,
-            "message": f.message,
-            "fix_suggestion": f.fix_suggestion,
-            "plain_english": f.plain_english,
-            "framework": f.framework,
-            "scanner": f.scanner,
-            "is_false_positive": f.is_false_positive,
-            "commit_sha": f.commit_sha,
-            "status": f.status,
-            "created_at": f.created_at.isoformat()
-        })
+    if framework:
+        findings = [f for f in findings if framework_matches(f.framework, framework)]
     
+    result = [_finding_to_dict(f) for f in findings]
     set_cache(cache_key, result, ttl=60)
     return result
 
@@ -196,7 +187,6 @@ def get_trend(db: Session = Depends(get_db)):
     
     findings = db.query(Finding).filter(func.date(Finding.created_at) >= start_date).all()
     
-    # Group by date
     by_date = {}
     for i in range(14):
         d = start_date + timedelta(days=i)
@@ -214,7 +204,7 @@ def get_trend(db: Session = Depends(get_db)):
         if counts["total"] > 0:
             rate = (counts["passed"] / counts["total"]) * 100
         else:
-            rate = 100.0 # if no findings, it's 100% compliant
+            rate = 100.0
         result.append({
             "date": d.isoformat(),
             "pass_rate": round(rate, 1)
@@ -242,17 +232,4 @@ def update_status(finding_id: int, body: Dict[str, str], db: Session = Depends(g
     invalidate_pattern("complianceai:trend")
     invalidate_pattern("complianceai:frameworks")
     
-    return {
-        "id": finding.id,
-        "repo": finding.repo,
-        "file_path": finding.file_path,
-        "line_number": finding.line_number,
-        "rule_id": finding.rule_id,
-        "severity": finding.severity,
-        "message": finding.message,
-        "fix_suggestion": finding.fix_suggestion,
-        "framework": finding.framework,
-        "commit_sha": finding.commit_sha,
-        "status": finding.status,
-        "created_at": finding.created_at.isoformat()
-    }
+    return _finding_to_dict(finding)

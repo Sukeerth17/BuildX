@@ -2,12 +2,17 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base
+from migrations import run_migrations, backfill_legacy_findings
 from routers import auth, findings, frameworks, ai_chat, audit
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure all ORM tables exist on startup for the active DATABASE_URL.
     Base.metadata.create_all(bind=engine)
+    print("[startup] Running database migrations...")
+    run_migrations()
+    print("[startup] Running legacy data backfill...")
+    backfill_legacy_findings()
     yield
 
 app = FastAPI(title="ComplianceAI Backend", lifespan=lifespan)

@@ -1,5 +1,15 @@
 import { create } from "zustand";
 
+export interface ComplianceMapping {
+  framework: string;
+  control: {
+    clause: string;
+    excerpt: string;
+    rationale: string;
+  };
+  confidence: number;
+}
+
 export interface Finding {
   id: number;
   repo: string;
@@ -10,9 +20,15 @@ export interface Finding {
   message: string;
   fix_suggestion: string;
   framework: string;
+  compliance_mappings: ComplianceMapping[];
+  risk_score: number;
+  risk_justification: string;
   commit_sha: string;
   status: string;
   created_at: string;
+  scanner?: string;
+  plain_english?: string;
+  is_false_positive?: number;
 }
 
 export interface Summary {

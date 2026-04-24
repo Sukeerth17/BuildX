@@ -16,6 +16,7 @@ from scanners.checkov_runner import run_checkov
 from scanners.kube_runner import run_kube_hunter
 from ai_triage import run_ai_triage
 from sarif_writer import write_sarif
+from api_sender import send_sarif_to_dashboard
 
 @click.group()
 def cli():
@@ -26,8 +27,7 @@ def cli():
 @cli.command()
 @click.option("--file", "-f", "-file", required=True, help="Path to the file to scan")
 @click.option("--format", "output_format", default="sarif", type=click.Choice(["sarif", "text"]), help="Output format")
-@click.option("--ci", is_flag=True, default=False, help="CI mode: exit 1 if critical/high findings found")
-def scan(file, output_format, ci):
+def scan(file, output_format):
     """Scan a file for security issues."""
     click.echo(f"[compliance-cli] Scanning: {file}", err=True)
 
@@ -60,6 +60,7 @@ def scan(file, output_format, ci):
     if output_format == "sarif":
         sarif_output = write_sarif(findings)
         click.echo(sarif_output)
+        send_sarif_to_dashboard(sarif_output)
     else:
         if not findings:
             click.echo("No findings.", err=True)
@@ -72,11 +73,10 @@ def scan(file, output_format, ci):
 
     click.echo(f"[compliance-cli] Done. {len(findings)} finding(s) found.", err=True)
 
-    if ci:
-        has_critical = any(
-            f.get("severity") in ("CRITICAL", "HIGH") for f in findings
-        )
-        sys.exit(1 if has_critical else 0)
+    has_critical = any(
+        f.get("severity") in ("CRITICAL", "HIGH") for f in findings
+    )
+    sys.exit(1 if has_critical else 0)
 
 
 if __name__ == "__main__":

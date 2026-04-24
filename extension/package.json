@@ -1,0 +1,134 @@
+{
+  "name": "complianceai",
+  "displayName": "ComplianceAI",
+  "description": "Real-time compliance scanning for Python, Terraform, YAML, and TypeScript with AI-powered fix suggestions",
+  "version": "0.1.0",
+  "publisher": "hackathon",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Security"
+  ],
+  "keywords": [
+    "compliance",
+    "security",
+    "scanner",
+    "sarif",
+    "python",
+    "terraform",
+    "yaml",
+    "typescript"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:terraform",
+    "onLanguage:yaml",
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "complianceai.scan",
+        "title": "ComplianceAI: Scan Current File",
+        "category": "ComplianceAI"
+      },
+      {
+        "command": "complianceai.applyFix",
+        "title": "ComplianceAI: Apply Fix",
+        "category": "ComplianceAI"
+      },
+      {
+        "command": "complianceai.showDashboard",
+        "title": "ComplianceAI: Show Dashboard",
+        "category": "ComplianceAI"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "complianceai-sidebar",
+          "title": "ComplianceAI",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "complianceai-sidebar": [
+        {
+          "type": "webview",
+          "id": "complianceai.dashboard",
+          "name": "Compliance Dashboard"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ComplianceAI",
+      "properties": {
+        "complianceai.cliPath": {
+          "type": "string",
+          "default": "compliance-cli",
+          "description": "Path to the compliance-cli executable"
+        },
+        "complianceai.autoScan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files on save"
+        },
+        "complianceai.enableDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show red squiggles for compliance issues"
+        },
+        "complianceai.apiBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:5000",
+          "description": "Base URL for the compliance dashboard API (Person 3's backend)"
+        },
+        "complianceai.severityThreshold": {
+          "type": "string",
+          "enum": [
+            "CRITICAL",
+            "HIGH",
+            "MEDIUM",
+            "LOW"
+          ],
+          "default": "MEDIUM",
+          "description": "Minimum severity level to display"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "complianceai.scan",
+        "key": "ctrl+shift+k",
+        "mac": "cmd+shift+k",
+        "when": "editorFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

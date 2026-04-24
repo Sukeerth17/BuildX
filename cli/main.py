@@ -16,6 +16,7 @@ from scanners.checkov_runner import run_checkov
 from scanners.kube_runner import run_kube_hunter
 from ai_triage import run_ai_triage
 from sarif_writer import write_sarif
+from api_sender import send_sarif_to_dashboard
 
 @click.group()
 def cli():
@@ -60,6 +61,7 @@ def scan(file, output_format, ci):
     if output_format == "sarif":
         sarif_output = write_sarif(findings)
         click.echo(sarif_output)
+        send_sarif_to_dashboard(sarif_output)
     else:
         if not findings:
             click.echo("No findings.", err=True)
@@ -77,6 +79,8 @@ def scan(file, output_format, ci):
             f.get("severity") in ("CRITICAL", "HIGH") for f in findings
         )
         sys.exit(1 if has_critical else 0)
+    
+    sys.exit(0)
 
 
 if __name__ == "__main__":

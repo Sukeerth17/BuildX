@@ -1,0 +1,7 @@
+# .compliance.yml
+# Place this file at the root of the repo you want to scan.
+# Person 1 defines this format.
+
+severity_threshold: LOW        # Report findings at this level and above (LOW/MEDIUM/HIGH/CRITICAL)
+ignored_rules: []              # List of rule IDs to suppress, e.g. ["B101", "B105"]
+accepted_risks_file: cli/accepted_risks.json   # Path to accepted risks record

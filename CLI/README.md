@@ -1,62 +1,58 @@
-# compliance-cli — Person 1's Folder
+# Compliance CLI
 
-## Setup
+The Compliance CLI is a powerful, parallelized security scanner wrapper designed to detect vulnerabilities and compliance issues across your codebase. It aggregates findings from multiple scanners (Bandit, Trivy, tfsec, Gitleaks, Semgrep, Checkov, Kube-hunter) and produces unified SARIF 2.1 output for easy consumption by dashboard and VS Code extension integrations.
+
+## Features
+- **Parallel Execution:** Runs up to 7 industry-standard scanners concurrently via `asyncio`.
+- **AI Triage:** Enriches findings with AI-generated context and remediation steps using Ollama.
+- **Unified Format:** Outputs findings directly in standard SARIF 2.1 JSON.
+- **Backend Integration:** Automatically sends findings to the compliance dashboard API.
+- **CI/CD Ready:** Includes a strict `--ci` mode that fails the build if critical vulnerabilities are found.
+
+## Prerequisites
+- Python 3.9+
+- [Ollama](https://ollama.ai) (running locally for AI triage features)
+- Base scanners must be installed and accessible in your PATH:
+  - `bandit`
+  - `trivy`
+  - `tfsec`
+  - `gitleaks`
+  - `semgrep`
+  - `checkov`
+  - `kube-hunter`
+
+## Installation
+
+1. Navigate to the `CLI` directory.
+2. Create and activate a virtual environment (recommended).
+3. Install the required dependencies:
 
 ```bash
-cd cli
-python3.11 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Make the command available
+## Usage
+
+You can run the CLI against any file or directory. By default, it outputs SARIF to stdout and sends it to the configured dashboard backend.
+
+### Standard Scan
+```bash
+python main.py scan --file path/to/your/code
+```
+
+### Text Output (Human Readable)
+```bash
+python main.py scan --file path/to/your/code --format text
+```
+
+### Pipeline (CI/CD) Mode
+Use the `--ci` flag in your pipelines. This will execute the scan normally, but if any `CRITICAL` or `HIGH` severity findings are discovered, the CLI will exit with code `1`, breaking the build.
 
 ```bash
-# From the repo root:
-pip install -e .    # if setup.py exists, OR just run with python directly:
-python cli/main.py scan --help
+python main.py scan --file path/to/your/code --ci
 ```
 
-## Week 1 — Test it works
+## Environment Variables
 
-```bash
-# Should print usage and exit cleanly
-python cli/main.py scan --help
-
-# Should scan the example file and print SARIF JSON
-python cli/main.py scan --file cli/example_vulnerable.py
-
-# Text output (easier to read during dev)
-python cli/main.py scan --file cli/example_vulnerable.py --format text
-
-# CI mode — exits with code 1 if HIGH/CRITICAL found
-python cli/main.py scan --file cli/example_vulnerable.py --ci
-echo "Exit code: $?"
-```
-
-## File Structure
-
-```
-/cli
-├── main.py                  ← entry point, Click commands
-├── config.py                ← reads .compliance.yml
-├── sarif_writer.py          ← converts findings → SARIF JSON
-├── accepted_risks.json      ← suppressed false positives
-├── requirements.txt
-├── example_vulnerable.py    ← test file with known problems
-├── .compliance.yml          ← config (place at repo root in real use)
-└── scanners/
-    ├── __init__.py
-    ├── bandit_runner.py     ← Week 1 ✅
-    ├── trivy_runner.py      ← Week 2
-    ├── tfsec_runner.py      ← Week 2
-    ├── gitleaks_runner.py   ← Week 2
-    ├── semgrep_runner.py    ← Week 2
-    ├── checkov_runner.py    ← Week 2
-    └── kube_runner.py       ← Week 2
-```
-
-## Contracts with teammates
-
-**To Person 2:** SARIF JSON is printed to stdout. Run the CLI and capture it.
-**To Person 3:** POST to `http://localhost:8000/api/v1/findings` (Week 3).
+- `COMPLIANCE_TOKEN`: A JWT token used to authenticate requests to the dashboard API backend.
+- `OLLAMA_MODEL`: Override the default `llama3` model for AI Triage.

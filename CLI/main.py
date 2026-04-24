@@ -27,7 +27,8 @@ def cli():
 @cli.command()
 @click.option("--file", "-f", "-file", required=True, help="Path to the file to scan")
 @click.option("--format", "output_format", default="sarif", type=click.Choice(["sarif", "text"]), help="Output format")
-def scan(file, output_format):
+@click.option("--ci", is_flag=True, default=False, help="CI mode: exit 1 if critical/high findings found")
+def scan(file, output_format, ci):
     """Scan a file for security issues."""
     click.echo(f"[compliance-cli] Scanning: {file}", err=True)
 
@@ -73,10 +74,13 @@ def scan(file, output_format):
 
     click.echo(f"[compliance-cli] Done. {len(findings)} finding(s) found.", err=True)
 
-    has_critical = any(
-        f.get("severity") in ("CRITICAL", "HIGH") for f in findings
-    )
-    sys.exit(1 if has_critical else 0)
+    if ci:
+        has_critical = any(
+            f.get("severity") in ("CRITICAL", "HIGH") for f in findings
+        )
+        sys.exit(1 if has_critical else 0)
+    
+    sys.exit(0)
 
 
 if __name__ == "__main__":

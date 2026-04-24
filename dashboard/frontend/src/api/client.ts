@@ -148,9 +148,21 @@ export const updateFindingStatus = async (id: number, status: string) => {
 };
 
 export const generateAuditReport = async (_startDate: string, _endDate: string) => {
-  // Generate a tiny placeholder PDF blob
-  const text = `%PDF-1.4\n% Mock audit report\n`;
-  return delay(new Blob([text], { type: "application/pdf" }), 1500);
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+  const response = await fetch(`${apiBase}/api/v1/audit/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ start_date: _startDate, end_date: _endDate }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to generate report (${response.status}): ${body || response.statusText}`);
+  }
+
+  return response.blob();
 };
 
 export const streamAIChat = async function* (message: string) {

@@ -36,7 +36,7 @@ function AuditPage() {
     setLoading(true);
     try {
       const blob = await generateAuditReport(startDate, endDate);
-      const url = URL.createObjectURL(new Blob([blob]));
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `audit_report_${startDate}_to_${endDate}.pdf`;

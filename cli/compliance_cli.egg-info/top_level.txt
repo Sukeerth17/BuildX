@@ -1,6 +1,0 @@
-ai_triage
-api_sender
-config
-main
-sarif_writer
-scanners

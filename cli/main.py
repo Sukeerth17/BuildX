@@ -18,6 +18,13 @@ from ai_triage import run_ai_triage
 from sarif_writer import write_sarif
 from api_sender import send_sarif_to_dashboard
 
+import os
+
+# Ensure the .venv/bin directory is in PATH so scanners can be found
+venv_bin = os.path.dirname(sys.executable)
+if venv_bin not in os.environ["PATH"]:
+    os.environ["PATH"] = venv_bin + os.pathsep + os.environ["PATH"]
+
 @click.group()
 def cli():
     """ComplianceAI — DevOps Security Scanner"""

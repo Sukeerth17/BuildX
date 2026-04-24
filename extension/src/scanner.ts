@@ -1,4 +1,7 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { spawn } from 'child_process';
+import * as vscode from 'vscode';
 import { OutputChannel } from 'vscode';
 import { ScanResult } from './types';
 import { SarifParser } from './sarifParser';
@@ -8,12 +11,56 @@ import { SarifParser } from './sarifParser';
  * Spawns the CLI as a child process and captures SARIF output.
  */
 export class Scanner {
+    private extensionPath?: string;
     private outputChannel: OutputChannel;
     private sarifParser: SarifParser;
 
-    constructor(outputChannel: OutputChannel) {
+    constructor(outputChannel: OutputChannel, extensionPath?: string) {
+        this.extensionPath = extensionPath;
         this.outputChannel = outputChannel;
         this.sarifParser = new SarifParser(outputChannel);
+    }
+
+    private resolveCliCommand(): string {
+        const configuredCliPath = vscode.workspace
+            .getConfiguration('complianceai')
+            .get<string>('cliPath', '')
+            .trim();
+
+        if (configuredCliPath) {
+            return configuredCliPath;
+        }
+
+        // 1. Try relative to the workspace folders (most common case)
+        for (const folder of vscode.workspace.workspaceFolders ?? []) {
+            const possiblePaths = [
+                path.resolve(folder.uri.fsPath, 'cli', '.venv', 'bin', 'compliance-cli'),
+                path.resolve(folder.uri.fsPath, '..', 'cli', '.venv', 'bin', 'compliance-cli'), // Sibling case
+                path.resolve(folder.uri.fsPath, 'venv', 'bin', 'compliance-cli'),
+            ];
+
+            for (const p of possiblePaths) {
+                if (fs.existsSync(p)) {
+                    return p;
+                }
+            }
+        }
+
+        // 2. Try relative to the extension path
+        if (this.extensionPath) {
+            const possiblePaths = [
+                path.resolve(this.extensionPath, '..', 'cli', '.venv', 'bin', 'compliance-cli'),
+                path.resolve(this.extensionPath, 'cli', '.venv', 'bin', 'compliance-cli'),
+            ];
+
+            for (const p of possiblePaths) {
+                if (fs.existsSync(p)) {
+                    return p;
+                }
+            }
+        }
+
+        return 'compliance-cli';
     }
 
     /**
@@ -24,7 +71,7 @@ export class Scanner {
     async scanFile(filePath: string): Promise<ScanResult[] | null> {
         return new Promise((resolve) => {
             try {
-                const cliCommand = 'compliance-cli';
+                const cliCommand = this.resolveCliCommand();
                 const args = ['scan', '--file', filePath, '--format', 'sarif'];
 
                 this.outputChannel.appendLine(`[Scanner] Spawning: ${cliCommand} ${args.join(' ')}`);
@@ -82,7 +129,7 @@ export class Scanner {
                     const err = error as NodeJS.ErrnoException;
                     if (err.code === 'ENOENT') {
                         this.outputChannel.appendLine(
-                            '[Scanner] ❌ compliance-cli not found. Make sure it is installed and in your PATH.'
+                            `[Scanner] ❌ CLI not found at "${cliCommand}". Set complianceai.cliPath or make sure it is installed and in your PATH.`
                         );
                     } else {
                         this.outputChannel.appendLine(`[Scanner] ❌ Process error: ${error.message}`);

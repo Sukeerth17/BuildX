@@ -38,13 +38,16 @@ def send_sarif_to_dashboard(sarif_data_str: str):
         payload = json.loads(sarif_data_str)
         payload["commit_sha"] = commit_sha
     except Exception as e:
-        print(f"Warning: Failed to parse SARIF data ({e})")
+        import sys
+        print(f"Warning: Failed to parse SARIF data ({e})", file=sys.stderr)
         return
 
     # Send to backend — graceful on failure
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=5)
         response.raise_for_status()
-        print(f"[api_sender] Findings sent to dashboard successfully.")
+        import sys
+        print(f"[api_sender] Findings sent to dashboard successfully.", file=sys.stderr)
     except requests.exceptions.RequestException as e:
-        print(f"Warning: Could not send findings to dashboard ({e})")
+        import sys
+        print(f"Warning: Could not send findings to dashboard ({e})", file=sys.stderr)

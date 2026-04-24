@@ -21,10 +21,20 @@ export class SarifParser {
 
         let sarifOutput;
         try {
-            sarifOutput = JSON.parse(sarifOutputString);
+            // Find the start of the JSON object (first '{') and the end (last '}')
+            const startIdx = sarifOutputString.indexOf('{');
+            const endIdx = sarifOutputString.lastIndexOf('}');
+
+            if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+                throw new Error('No valid JSON object found in output');
+            }
+
+            const jsonPart = sarifOutputString.substring(startIdx, endIdx + 1);
+            sarifOutput = JSON.parse(jsonPart);
         } catch (e) {
             if (this.outputChannel) {
-                this.outputChannel.appendLine(`[SarifParser] Failed to parse JSON string: ${e}`);
+                this.outputChannel.appendLine(`[SarifParser] Failed to parse JSON from output: ${e}`);
+                this.outputChannel.appendLine(`[SarifParser] Raw output was: ${sarifOutputString.substring(0, 1000)}...`);
             }
             return results;
         }

@@ -7,6 +7,7 @@
     "vscode": "^1.85.0"
   },
   "activationEvents": [
+    "onStartupFinished",
     "onLanguage:python",
     "onLanguage:typescript",
     "onLanguage:yaml",
@@ -35,6 +36,11 @@
           "type": "string",
           "default": "http://localhost:8000",
           "description": "Backend URL"
+        },
+        "complianceai.cliPath": {
+          "type": "string",
+          "default": "compliance-cli",
+          "description": "Absolute path to the compliance CLI executable or a command available on PATH"
         },
         "complianceai.enableAutoScan": {
           "type": "boolean",

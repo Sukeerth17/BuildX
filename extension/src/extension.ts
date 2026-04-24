@@ -23,7 +23,7 @@ export async function activate(context: vscode.ExtensionContext) {
     outputChannel.appendLine('ComplianceAI extension activated');
 
     // Initialize providers
-    scanner = new Scanner(outputChannel);
+    scanner = new Scanner(outputChannel, context.extensionPath);
     diagnosticProvider = new DiagnosticProvider();
     statusBarManager = new StatusBarManager();
     apiClient = new ApiClient(outputChannel);

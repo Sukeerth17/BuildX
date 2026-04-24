@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from typing import List, Dict
 
 async def run_tfsec(target: str) -> List[Dict]:
@@ -20,10 +21,10 @@ async def run_tfsec(target: str) -> List[Dict]:
 
         data = json.loads(raw)
     except FileNotFoundError:
-        print("[tfsec_runner] ERROR: tfsec is not installed. Skipping.")
+        print("[tfsec_runner] ERROR: tfsec is not installed. Skipping.", file=sys.stderr)
         return []
     except json.JSONDecodeError:
-        print(f"[tfsec_runner] ERROR: Could not parse tfsec output:\n{raw}")
+        print(f"[tfsec_runner] ERROR: Could not parse tfsec output:\n{raw}", file=sys.stderr)
         return []
 
     findings = []

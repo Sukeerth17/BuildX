@@ -7,7 +7,7 @@ import { DashboardData } from './types';
  * Fetches data from Person 3's backend API and renders it as HTML.
  */
 export class SidebarProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'complianceai.dashboard';
+    public static readonly viewType = 'complianceai.sidebar';
 
     private view?: vscode.WebviewView;
     private apiClient: ApiClient;
@@ -192,7 +192,21 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
      */
     private getDashboardHtml(data: DashboardData): string {
         const f = data.findings;
+        const topFindings = data.topFindings ?? [];
         const timestamp = new Date().toLocaleTimeString();
+        const topFindingsHtml = topFindings.length
+            ? topFindings
+                  .map(
+                      (finding) => `
+          <li class="top-finding">
+            <span class="sev ${finding.severity.toLowerCase()}">${finding.severity}</span>
+            <span class="msg">${finding.message}</span>
+            <span class="meta">${finding.filePath ?? ''}${finding.lineNumber ? `:${finding.lineNumber}` : ''}</span>
+          </li>
+          `
+                  )
+                  .join('')
+            : '<li class="empty">No open findings right now.</li>';
 
         return `
       <style>
@@ -230,6 +244,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         .high { border-left: 4px solid #ff8800; }
         .medium { border-left: 4px solid #ffcc00; }
         .low { border-left: 4px solid #00ff00; }
+        .top-findings { margin-top: 12px; list-style: none; padding: 0; display: grid; gap: 8px; }
+        .top-finding { padding: 8px; border: 1px solid var(--vscode-panel-border); border-radius: 6px; display: grid; gap: 3px; }
+        .top-finding .msg { font-size: 12px; }
+        .top-finding .meta { font-size: 11px; color: #888; }
+        .sev { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
+        .sev.critical { color: #f44747; }
+        .sev.high { color: #ff8800; }
+        .sev.medium { color: #ffcc00; }
+        .sev.low { color: #4ec9b0; }
+        .empty { color: #888; font-size: 12px; }
         button {
           width: 100%;
           padding: 8px;
@@ -267,6 +291,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             <div class="finding-label">Low</div>
           </div>
         </div>
+
+        <h2>Top Open Findings</h2>
+        <ul class="top-findings">
+          ${topFindingsHtml}
+        </ul>
 
         <button onclick="scan()">🔍 Scan Current File</button>
         <button onclick="refresh()">🔄 Refresh Dashboard</button>

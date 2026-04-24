@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from typing import List, Dict
 
 async def run_semgrep(target: str) -> List[Dict]:
@@ -20,10 +21,10 @@ async def run_semgrep(target: str) -> List[Dict]:
 
         data = json.loads(raw)
     except FileNotFoundError:
-        print("[semgrep_runner] ERROR: semgrep is not installed. Skipping.")
+        print("[semgrep_runner] ERROR: semgrep is not installed. Skipping.", file=sys.stderr)
         return []
     except json.JSONDecodeError:
-        print(f"[semgrep_runner] ERROR: Could not parse semgrep output:\n{raw}")
+        print(f"[semgrep_runner] ERROR: Could not parse semgrep output:\n{raw}", file=sys.stderr)
         return []
 
     findings = []

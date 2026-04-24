@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from typing import List, Dict
 
 async def run_trivy(target: str) -> List[Dict]:
@@ -20,10 +21,10 @@ async def run_trivy(target: str) -> List[Dict]:
 
         data = json.loads(raw)
     except FileNotFoundError:
-        print("[trivy_runner] ERROR: trivy is not installed. Skipping.")
+        print("[trivy_runner] ERROR: trivy is not installed. Skipping.", file=sys.stderr)
         return []
     except json.JSONDecodeError:
-        print(f"[trivy_runner] ERROR: Could not parse Trivy output:\n{raw}")
+        print(f"[trivy_runner] ERROR: Could not parse Trivy output:\n{raw}", file=sys.stderr)
         return []
 
     findings = []

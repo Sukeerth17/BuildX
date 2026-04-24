@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { OutputChannel } from 'vscode';
 import * as vscode from 'vscode';
-import { DashboardData } from './types';
+import { BackendFinding, DashboardData, TopFinding } from './types';
 
 /**
  * ApiClient: Communicates with Person 3's dashboard backend.
@@ -15,8 +15,8 @@ export class ApiClient {
         this.outputChannel = outputChannel;
 
         const baseUrl = vscode.workspace.getConfiguration('complianceai').get<string>(
-            'apiBaseUrl',
-            'http://localhost:5000'
+            'backendUrl',
+            'http://localhost:8000'
         );
 
         this.client = axios.create({
@@ -38,11 +38,48 @@ export class ApiClient {
         try {
             this.outputChannel.appendLine('[ApiClient] Fetching dashboard data...');
 
-            const response = await this.client.get<DashboardData>('/api/compliance/dashboard');
+            const [summaryResponse, findingsResponse] = await Promise.all([
+                this.client.get<{ critical: number; high: number; medium: number; low: number; pass_rate: number }>(
+                    '/api/v1/findings/summary'
+                ),
+                this.client.get<BackendFinding[]>('/api/v1/findings'),
+            ]);
 
-            if (response.status === 200 && response.data) {
-                this.outputChannel.appendLine(`[ApiClient] Successfully fetched dashboard data`);
-                return response.data;
+            if (summaryResponse.status === 200 && findingsResponse.status === 200) {
+                const summary = summaryResponse.data;
+                const findings = findingsResponse.data ?? [];
+                const recentOpenFindings = findings
+                    .filter((finding) => finding.status === 'open')
+                    .slice(0, 3);
+
+                const dashboardData: DashboardData = {
+                    overallScore: summary.pass_rate,
+                    findings: {
+                        critical: summary.critical,
+                        high: summary.high,
+                        medium: summary.medium,
+                        low: summary.low,
+                    },
+                    recentScans: findings.slice(0, 10).map((finding) => ({
+                        timestamp: finding.created_at,
+                        fileName: finding.file_path,
+                        issueCount: 1,
+                        maxSeverity: finding.severity,
+                    })),
+                    topFindings: recentOpenFindings.map<TopFinding>((finding) => ({
+                        id: finding.id,
+                        repo: finding.repo,
+                        filePath: finding.file_path,
+                        lineNumber: finding.line_number,
+                        message: finding.message,
+                        severity: finding.severity,
+                    })),
+                };
+
+                this.outputChannel.appendLine(
+                    `[ApiClient] Dashboard loaded. summary + ${findings.length} findings`
+                );
+                return dashboardData;
             }
 
             return null;
@@ -74,13 +111,19 @@ export class ApiClient {
         try {
             this.outputChannel.appendLine('[ApiClient] Fetching recent scans...');
 
-            const response = await this.client.get<{ scans: any[] }>('/api/compliance/scans/recent');
+            const response = await this.client.get<BackendFinding[]>('/api/v1/findings');
 
-            if (response.status === 200 && response.data && Array.isArray(response.data.scans)) {
+            if (response.status === 200 && Array.isArray(response.data)) {
+                const scans = response.data.slice(0, 20).map((finding) => ({
+                    timestamp: finding.created_at,
+                    fileName: finding.file_path,
+                    issueCount: 1,
+                    maxSeverity: finding.severity,
+                }));
                 this.outputChannel.appendLine(
-                    `[ApiClient] Fetched ${response.data.scans.length} recent scans`
+                    `[ApiClient] Fetched ${scans.length} recent scans`
                 );
-                return response.data.scans;
+                return scans;
             }
 
             return [];
@@ -98,19 +141,32 @@ export class ApiClient {
      * @returns Success or failure
      */
     async reportScan(
-        filePath: string,
-        findings: number,
-        severity: string
+        findingsSarif: Record<string, unknown>,
+        commitSha = 'local-scan'
     ): Promise<boolean> {
+        const token = this.getJwtToken();
+        if (!token) {
+            this.outputChannel.appendLine(
+                '[ApiClient] JWT token missing. Skipping findings upload to backend.'
+            );
+            return false;
+        }
+
         try {
             this.outputChannel.appendLine('[ApiClient] Reporting scan...');
 
-            const response = await this.client.post('/api/compliance/scans/report', {
-                filePath,
-                findings,
-                severity,
-                timestamp: new Date().toISOString(),
-            });
+            const response = await this.client.post(
+                '/api/v1/findings',
+                {
+                    commit_sha: commitSha,
+                    ...findingsSarif,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
             if (response.status === 201 || response.status === 200) {
                 this.outputChannel.appendLine('[ApiClient] Scan report submitted successfully');
@@ -122,5 +178,11 @@ export class ApiClient {
             this.outputChannel.appendLine(`[ApiClient] Error reporting scan: ${error}`);
             return false;
         }
+    }
+
+    private getJwtToken(): string {
+        return (
+            vscode.workspace.getConfiguration('complianceai').get<string>('jwtToken', '').trim()
+        );
     }
 }

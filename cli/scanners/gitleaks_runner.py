@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 from typing import List, Dict
 
 async def run_gitleaks(target: str) -> List[Dict]:
@@ -30,10 +31,10 @@ async def run_gitleaks(target: str) -> List[Dict]:
         os.remove("gitleaks-report.json")
 
     except FileNotFoundError:
-        print("[gitleaks_runner] ERROR: gitleaks is not installed. Skipping.")
+        print("[gitleaks_runner] ERROR: gitleaks is not installed. Skipping.", file=sys.stderr)
         return []
     except json.JSONDecodeError:
-        print("[gitleaks_runner] ERROR: Could not parse gitleaks output")
+        print("[gitleaks_runner] ERROR: Could not parse gitleaks output", file=sys.stderr)
         return []
 
     findings = []

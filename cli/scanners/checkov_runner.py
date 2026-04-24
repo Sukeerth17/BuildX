@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from typing import List, Dict
 
 async def run_checkov(target: str) -> List[Dict]:
@@ -28,10 +29,10 @@ async def run_checkov(target: str) -> List[Dict]:
             data = json.loads(raw)
             
     except FileNotFoundError:
-        print("[checkov_runner] ERROR: checkov is not installed. Skipping.")
+        print("[checkov_runner] ERROR: checkov is not installed. Skipping.", file=sys.stderr)
         return []
     except json.JSONDecodeError:
-        print(f"[checkov_runner] ERROR: Could not parse checkov output:\n{raw}")
+        print(f"[checkov_runner] ERROR: Could not parse checkov output:\n{raw}", file=sys.stderr)
         return []
 
     findings = []

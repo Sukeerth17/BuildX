@@ -5,11 +5,13 @@ import { HoverProvider } from './hoverProvider';
 import { CodeActionProvider } from './codeActionProvider';
 import { StatusBarManager } from './statusBar';
 import { SidebarProvider } from './sidebarProvider';
+import { ApiClient } from './apiClient';
 
 let scanner: Scanner;
 let diagnosticProvider: DiagnosticProvider;
 let statusBarManager: StatusBarManager;
 let sidebarProvider: SidebarProvider;
+let apiClient: ApiClient;
 let outputChannel: vscode.OutputChannel;
 
 /**
@@ -24,6 +26,7 @@ export async function activate(context: vscode.ExtensionContext) {
     scanner = new Scanner(outputChannel);
     diagnosticProvider = new DiagnosticProvider();
     statusBarManager = new StatusBarManager();
+    apiClient = new ApiClient(outputChannel);
     sidebarProvider = new SidebarProvider(context, outputChannel);
 
     // Register hover provider
@@ -40,13 +43,15 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Register sidebar WebView
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider('complianceai.dashboard', sidebarProvider)
+        vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebarProvider)
     );
 
     // File save event listener - core functionality
     context.subscriptions.push(
         vscode.workspace.onDidSaveTextDocument(async (document) => {
-            const shouldAutoScan = vscode.workspace.getConfiguration('complianceai').get<boolean>('autoScan', true);
+            const shouldAutoScan = vscode.workspace
+                .getConfiguration('complianceai')
+                .get<boolean>('enableAutoScan', true);
 
             if (!shouldAutoScan) {
                 return;
@@ -109,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('complianceai.showDashboard', async () => {
             outputChannel.appendLine('Show dashboard command triggered');
-            await vscode.commands.executeCommand('complianceai.dashboard.focus');
+            await vscode.commands.executeCommand('complianceai-sidebar.focus');
         })
     );
 
@@ -158,6 +163,36 @@ async function handleFileScan(document: vscode.TextDocument, context: vscode.Ext
             medium: mediumCount,
             low: lowCount,
         });
+
+        // Optional backend sync when JWT is configured.
+        const reportPayload = {
+            runs: [
+                {
+                    results: results.map((result) => ({
+                        ruleId: result.ruleId,
+                        message: { text: result.message },
+                        locations: [
+                            {
+                                physicalLocation: {
+                                    artifactLocation: {
+                                        uri: result.filePath || fileName,
+                                    },
+                                    region: {
+                                        startLine: result.line,
+                                    },
+                                },
+                            },
+                        ],
+                        properties: {
+                            severity: result.severity,
+                            fix: result.fix,
+                            framework: result.framework,
+                        },
+                    })),
+                },
+            ],
+        };
+        await apiClient.reportScan(reportPayload);
 
         // Refresh sidebar dashboard
         sidebarProvider.refresh();

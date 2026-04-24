@@ -8,6 +8,7 @@ Install: pip install bandit
 import asyncio
 import json
 import subprocess
+import sys
 from typing import List, Dict
 
 
@@ -35,10 +36,10 @@ async def run_bandit(file_path: str) -> List[Dict]:
         data = json.loads(raw)
 
     except FileNotFoundError:
-        print("[bandit_runner] ERROR: bandit is not installed. Run: pip install bandit")
+        print("[bandit_runner] ERROR: bandit is not installed. Run: pip install bandit", file=sys.stderr)
         return []
     except json.JSONDecodeError:
-        print(f"[bandit_runner] ERROR: Could not parse Bandit output:\n{raw}")
+        print(f"[bandit_runner] ERROR: Could not parse Bandit output:\n{raw}", file=sys.stderr)
         return []
 
     findings = []

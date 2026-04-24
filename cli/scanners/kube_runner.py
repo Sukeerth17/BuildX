@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from typing import List, Dict
 
 async def run_kube_hunter(target: str) -> List[Dict]:
@@ -21,10 +22,10 @@ async def run_kube_hunter(target: str) -> List[Dict]:
 
         data = json.loads(raw)
     except FileNotFoundError:
-        print("[kube_runner] ERROR: kube-hunter is not installed. Skipping.")
+        print("[kube_runner] ERROR: kube-hunter is not installed. Skipping.", file=sys.stderr)
         return []
     except json.JSONDecodeError:
-        print(f"[kube_runner] ERROR: Could not parse kube-hunter output")
+        print(f"[kube_runner] ERROR: Could not parse kube-hunter output", file=sys.stderr)
         return []
 
     findings = []

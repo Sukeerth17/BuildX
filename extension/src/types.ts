@@ -52,6 +52,8 @@ export interface DashboardData {
         date: string;
         score: number;
     }[];
+    /** Top open issues to display in sidebar */
+    topFindings?: TopFinding[];
 }
 
 /**
@@ -70,7 +72,28 @@ export interface RecentScan {
 
 // Extended for Week 3
 export interface TopFinding {
-    id: string;
+    id: number;
+    repo?: string;
+    filePath?: string;
+    lineNumber?: number;
     message: string;
     severity: string;
+}
+
+/**
+ * Backend finding record from /api/v1/findings.
+ */
+export interface BackendFinding {
+    id: number;
+    repo: string;
+    file_path: string;
+    line_number: number;
+    rule_id: string;
+    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    message: string;
+    fix_suggestion: string;
+    framework: string;
+    commit_sha: string;
+    status: 'open' | 'fixed' | 'accepted';
+    created_at: string;
 }

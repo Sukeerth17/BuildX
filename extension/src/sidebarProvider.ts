@@ -7,102 +7,102 @@ import { DashboardData } from './types';
  * Fetches data from Person 3's backend API and renders it as HTML.
  */
 export class SidebarProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'complianceai.dashboard';
+    public static readonly viewType = 'complianceai.dashboard';
 
-  private view?: vscode.WebviewView;
-  private apiClient: ApiClient;
-  private context: vscode.ExtensionContext;
-  private outputChannel: vscode.OutputChannel;
+    private view?: vscode.WebviewView;
+    private apiClient: ApiClient;
+    private context: vscode.ExtensionContext;
+    private outputChannel: vscode.OutputChannel;
 
-  constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) {
-    this.context = context;
-    this.outputChannel = outputChannel;
-    this.apiClient = new ApiClient(outputChannel);
-  }
+    constructor(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) {
+        this.context = context;
+        this.outputChannel = outputChannel;
+        this.apiClient = new ApiClient(outputChannel);
+    }
 
-  /**
-   * Resolve the WebView view (called by VS Code).
-   */
-  resolveWebviewView(
-    webviewView: vscode.WebviewView,
-    context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
-  ): void | Thenable<void> {
-    this.view = webviewView;
+    /**
+     * Resolve the WebView view (called by VS Code).
+     */
+    resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken
+    ): void | Thenable<void> {
+        this.view = webviewView;
 
-    webviewView.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [this.context.extensionUri],
-    };
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [this.context.extensionUri],
+        };
 
-    webviewView.webview.html = this.getHtml();
+        webviewView.webview.html = this.getHtml();
 
-    // Refresh data when the view becomes visible
-    webviewView.onDidChangeVisibility(async () => {
-      if (webviewView.visible) {
-        await this.refresh();
-      }
-    });
+        // Refresh data when the view becomes visible
+        webviewView.onDidChangeVisibility(async () => {
+            if (webviewView.visible) {
+                await this.refresh();
+            }
+        });
 
-    // Handle messages from the WebView
-    webviewView.webview.onDidReceiveMessage((message) => {
-      if (message.command === 'refresh') {
+        // Handle messages from the WebView
+        webviewView.webview.onDidReceiveMessage((message) => {
+            if (message.command === 'refresh') {
+                this.refresh();
+            } else if (message.command === 'scan') {
+                vscode.commands.executeCommand('complianceai.scan');
+            }
+        });
+
+        // Initial data load
         this.refresh();
-      } else if (message.command === 'scan') {
-        vscode.commands.executeCommand('complianceai.scan');
-      }
-    });
-
-    // Initial data load
-    this.refresh();
-  }
-
-  /**
-   * Refresh the dashboard with latest data.
-   */
-  async refresh(): Promise<void> {
-    if (!this.view) {
-      return;
     }
 
-    try {
-      this.outputChannel.appendLine('[Sidebar] Fetching dashboard data...');
+    /**
+     * Refresh the dashboard with latest data.
+     */
+    async refresh(): Promise<void> {
+        if (!this.view) {
+            return;
+        }
 
-      const data = await this.apiClient.getDashboardData();
+        try {
+            this.outputChannel.appendLine('[Sidebar] Fetching dashboard data...');
 
-      if (data) {
-        this.updateWebView(data);
-      } else {
-        this.showError('Failed to fetch dashboard data. Is the backend running?');
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      this.outputChannel.appendLine(`[Sidebar] Error: ${errorMsg}`);
-      this.showError(`Error: ${errorMsg}`);
-    }
-  }
+            const data = await this.apiClient.getDashboardData();
 
-  /**
-   * Update the WebView with new data.
-   */
-  private updateWebView(data: DashboardData): void {
-    if (!this.view) {
-      return;
-    }
-
-    const html = this.getDashboardHtml(data);
-    this.view.webview.html = html;
-  }
-
-  /**
-   * Show an error message in the WebView.
-   */
-  private showError(message: string): void {
-    if (!this.view) {
-      return;
+            if (data) {
+                this.updateWebView(data);
+            } else {
+                this.showError('Failed to fetch dashboard data. Is the backend running?');
+            }
+        } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            this.outputChannel.appendLine(`[Sidebar] Error: ${errorMsg}`);
+            this.showError(`Error: ${errorMsg}`);
+        }
     }
 
-    this.view.webview.html = `
+    /**
+     * Update the WebView with new data.
+     */
+    private updateWebView(data: DashboardData): void {
+        if (!this.view) {
+            return;
+        }
+
+        const html = this.getDashboardHtml(data);
+        this.view.webview.html = html;
+    }
+
+    /**
+     * Show an error message in the WebView.
+     */
+    private showError(message: string): void {
+        if (!this.view) {
+            return;
+        }
+
+        this.view.webview.html = `
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 16px; }
         .error { color: #f44747; }
@@ -116,13 +116,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         <li>The extension has internet access</li>
       </ul>
     `;
-  }
+    }
 
-  /**
-   * Get the base HTML structure of the sidebar.
-   */
-  private getHtml(): string {
-    return `
+    /**
+     * Get the base HTML structure of the sidebar.
+     */
+    private getHtml(): string {
+        return `
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -185,16 +185,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         vscode.postMessage({ command: 'refresh' });
       </script>
     `;
-  }
+    }
 
-  /**
-   * Get the dashboard HTML with data.
-   */
-  private getDashboardHtml(data: DashboardData): string {
-    const f = data.findings;
-    const timestamp = new Date().toLocaleTimeString();
+    /**
+     * Get the dashboard HTML with data.
+     */
+    private getDashboardHtml(data: DashboardData): string {
+        const f = data.findings;
+        const timestamp = new Date().toLocaleTimeString();
 
-    return `
+        return `
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -283,5 +283,5 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         }
       </script>
     `;
-  }
+    }
 }

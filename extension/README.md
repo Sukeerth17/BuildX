@@ -1,225 +1,186 @@
-# ComplianceAI - VS Code Extension
+# ComplianceAI — VS Code Extension
 
-## Overview
-
-**ComplianceAI** is a real-time compliance and security scanning VS Code extension that integrates with the hackathon's three-person build:
-
-- **Person 1**: `compliance-cli` (the scanning engine)
-- **Person 2**: This extension (the VS Code UI layer)
-- **Person 3**: Dashboard backend (the analytics layer)
-
-When you save a Python, Terraform, YAML, or TypeScript file, ComplianceAI automatically runs compliance checks and shows problems directly in your editor with AI-powered fix suggestions.
-
-## Features
-
-✅ **Real-time Scanning** - Runs on every file save  
-✅ **Red Squiggles** - Visual indicators on problem lines  
-✅ **Hover Tooltips** - Detailed explanations when you hover  
-✅ **Lightbulb Actions** - "Apply Fix" with one click  
-✅ **Compliance Score Badge** - Status bar shows overall health  
-✅ **Mini Dashboard** - Sidebar panel with analytics  
-✅ **SARIF Integration** - Parses Person 1's output format  
-
-## Getting Started
-
-### Prerequisites
-
-1. **Node.js** (v14+) and npm
-2. **VS Code** (v1.85.0+)
-3. **compliance-cli** installed by Person 1
-   ```bash
-   # Verify it works:
-   compliance-cli scan -file test.py --format sarif
-   ```
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Sukeerth17/BuildX.git
-   cd BuildX/Extension
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Compile TypeScript**
-   ```bash
-   npm run compile
-   ```
-
-4. **Launch the test extension** (in VS Code)
-   - Press `F5` to open a new VS Code window with the extension loaded
-   - The extension activates when you open any Python/Terraform/YAML/TypeScript file
-
-5. **Check the Output panel**
-   - Click **View > Output**
-   - Select **"ComplianceAI"** from the dropdown
-   - You should see activation logs
-
-### Development Workflow
-
-```bash
-# Watch TypeScript files and recompile on change
-npm run watch
-
-# Lint the code
-npm run lint
-
-# Run tests (when available)
-npm run test
-```
-
-## Configuration
-
-Open **Settings** (Ctrl+, / Cmd+,) and search for `complianceai`:
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `complianceai.cliPath` | Path to compliance-cli executable | `compliance-cli` |
-| `complianceai.autoScan` | Auto-scan on file save | `true` |
-| `complianceai.enableDiagnostics` | Show red squiggles | `true` |
-| `complianceai.apiBaseUrl` | Person 3's backend URL | `http://localhost:5000` |
-| `complianceai.severityThreshold` | Minimum severity to show | `MEDIUM` |
-
-## Commands
-
-| Command | Shortcut | Description |
-|---------|----------|-------------|
-| `ComplianceAI: Scan Current File` | Ctrl+Shift+K (Cmd+Shift+K on Mac) | Manually scan the active file |
-| `ComplianceAI: Apply Fix` | (via lightbulb) | Apply AI-suggested fix to a line |
-| `ComplianceAI: Show Dashboard` | (via sidebar) | Open the mini compliance dashboard |
-
-## Architecture
-
-### Folder Structure
-
-```
-/extension/
-├── src/
-│   ├── extension.ts            # Main entry point
-│   ├── scanner.ts              # Runs compliance-cli as child process
-│   ├── sarifParser.ts          # Parses SARIF JSON → VS Code diagnostics
-│   ├── diagnosticProvider.ts   # Creates Diagnostic objects
-│   ├── hoverProvider.ts        # Hover tooltip handler
-│   ├── codeActionProvider.ts   # Lightbulb "Apply Fix" actions
-│   ├── statusBar.ts            # Compliance score badge
-│   ├── sidebarProvider.ts      # WebView mini-dashboard
-│   └── apiClient.ts            # Calls Person 3's API
-├── package.json                # Extension manifest
-├── tsconfig.json               # TypeScript config
-├── .vscodeignore               # Packaging exclusions
-└── README.md                   # This file
-```
-
-### Data Flow
-
-```
-[User saves file]
-    ↓
-[extension.ts detects file save]
-    ↓
-[scanner.ts spawns compliance-cli]
-    ↓
-[CLI returns SARIF JSON to stdout]
-    ↓
-[sarifParser.ts converts to VS Code Diagnostics]
-    ↓
-[diagnosticProvider.ts shows red squiggles]
-    ↓
-[hoverProvider.ts shows tooltips on hover]
-    ↓
-[codeActionProvider.ts shows lightbulb on hover]
-    ↓
-[statusBar.ts updates compliance score badge]
-    ↓
-[sidebarProvider.ts fetches latest data from Person 3's API]
-```
-
-## Troubleshooting
-
-### Extension doesn't activate
-- **Symptom**: No ComplianceAI output in the Output panel
-- **Fix**: Make sure you have a Python/Terraform/YAML/TypeScript file open in the editor
-
-### "compliance-cli not found"
-- **Symptom**: Error message in Output panel
-- **Fix**: 
-  1. Verify Person 1's CLI is installed: `which compliance-cli` (or `where` on Windows)
-  2. If not installed, ask Person 1 to install it globally
-  3. Update the `complianceai.cliPath` setting if it's installed in a non-standard location
-
-### No diagnostics showing
-- **Symptom**: Scan runs but no red squiggles appear
-- **Fix**:
-  1. Check `complianceai.enableDiagnostics` is `true`
-  2. Check the severity threshold isn't filtering out all issues
-  3. Look at the Output panel to see if the scanner found any problems
-
-### Dashboard sidebar is blank
-- **Symptom**: Sidebar opens but shows no data
-- **Fix**:
-  1. Verify Person 3's backend is running at `complianceai.apiBaseUrl`
-  2. Check the browser console (F12 in the WebView) for API errors
-  3. Ensure the backend returns valid JSON
-
-## SARIF Contract (Person 1 ↔ Person 2)
-
-The extension expects the CLI to output **SARIF 2.1** JSON on stdout with this structure:
-
-```json
-{
-  "version": "2.1.0",
-  "runs": [{
-    "results": [{
-      "ruleId": "B105",
-      "message": { "text": "Hard-coded password found" },
-      "locations": [{
-        "physicalLocation": {
-          "artifactLocation": { "uri": "path/to/file.py" },
-          "region": { "startLine": 42 }
-        }
-      }],
-      "properties": {
-        "severity": "CRITICAL",
-        "fix": "Use environment variable instead of hard-coded string",
-        "framework": "OWASP A02:2021"
-      }
-    }]
-  }]
-}
-```
-
-### Required Fields
-- `ruleId`: Unique identifier for the rule
-- `message.text`: Human-readable problem description
-- `locations[0].physicalLocation.artifactLocation.uri`: File path
-- `locations[0].physicalLocation.region.startLine`: 1-indexed line number
-- `properties.severity`: `CRITICAL | HIGH | MEDIUM | LOW`
-- `properties.fix`: AI-generated fix suggestion text
-- `properties.framework`: Framework/standard (e.g., "SOC 2 CC6.7")
-
-## Contributing
-
-To contribute:
-1. Create a feature branch: `git checkout -b feature/my-feature`
-2. Commit your changes: `git commit -am 'Add my feature'`
-3. Push to the branch: `git push origin feature/my-feature`
-4. Create a Pull Request
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Support
-
-For issues or questions:
-- Check this README's Troubleshooting section
-- Review the Output panel logs
-- Open an issue on GitHub
+> Real-time compliance & security scanning inside VS Code, powered by the ComplianceAI CLI and dashboard backend.
 
 ---
 
-**Built by Person 2 for the Hackathon 2.0 Project**
+## Features
+
+| Feature | Description |
+|---|---|
+| 🔍 **Auto-scan on save** | Every supported file is scanned automatically when saved |
+| 🔴 **Red squiggles** | Inline diagnostics highlight each finding on the exact line |
+| 💡 **Hover tooltips** | Hover over a squiggle to see severity, framework, and AI fix suggestion |
+| 🔧 **Fix button (lightbulb)** | One-click apply of the AI-suggested fix; triggers a re-scan on next save |
+| 📊 **Status bar badge** | Shows `✅ 100%` or `❌ 3 critical` after every scan |
+| 🗂️ **Sidebar dashboard** | Pass rate, finding counts, and top 3 critical issues from the live backend |
+
+---
+
+## Supported Languages
+
+- Python (`.py`)
+- TypeScript / JavaScript (`.ts`, `.js`)
+- Terraform (`.tf`)
+- YAML (`.yaml`, `.yml`)
+
+---
+
+## Installation
+
+### Prerequisites
+
+1. **Node.js ≥ 18** and **npm**
+2. **ComplianceAI CLI** installed and on your `PATH`:
+   ```bash
+   cd ../cli
+   pip install -e .
+   # Verify:
+   compliance-cli --version
+   ```
+3. *(Optional)* Person 3's dashboard backend running at `http://localhost:8000`
+
+### Install the Extension
+
+#### Option A — Run from Source (Dev / Hackathon)
+
+```bash
+cd extension
+npm install
+npm run compile
+```
+
+Then press **F5** in VS Code to launch the **Extension Development Host**.
+
+#### Option B — Install the `.vsix` Package
+
+```bash
+cd extension
+npm install
+npm run compile
+npx vsce package          # generates complianceai-0.0.1.vsix
+code --install-extension complianceai-0.0.1.vsix
+```
+
+---
+
+## Configuration
+
+Open **Settings → Extensions → ComplianceAI**:
+
+| Setting | Default | Description |
+|---|---|---|
+| `complianceai.jwtToken` | *(empty)* | JWT token for the dashboard backend |
+| `complianceai.backendUrl` | `http://localhost:8000` | Backend API base URL |
+| `complianceai.enableAutoScan` | `true` | Auto-scan on every file save |
+| `complianceai.severityThreshold` | `MEDIUM` | Minimum severity to display |
+
+Or set them directly in `settings.json`:
+
+```json
+{
+  "complianceai.backendUrl": "http://localhost:8000",
+  "complianceai.jwtToken": "your-jwt-token-here",
+  "complianceai.enableAutoScan": true,
+  "complianceai.severityThreshold": "LOW"
+}
+```
+
+---
+
+## Usage
+
+### Auto-scan
+Open any `.py`, `.ts`, `.yaml`, or `.tf` file and **save it** (`Ctrl+S` / `Cmd+S`).  
+The extension will:
+1. Run the CLI scanner in the background
+2. Parse the SARIF output
+3. Render squiggles on vulnerable lines
+4. Update the status bar badge
+
+### Manual scan
+- Open the Command Palette (`Ctrl+Shift+P`) → **ComplianceAI: Run Scan**
+- Or press **`Ctrl+Shift+K`** (`Cmd+Shift+K` on Mac)
+
+### Clear diagnostics
+Command Palette → **ComplianceAI: Clear Diagnostics**
+
+---
+
+## Testing
+
+A ready-made vulnerable test file is included:
+
+```
+extension/test-fixtures/vulnerable.py
+```
+
+Open it in VS Code, save it, and verify:
+
+| Test | Expected Result |
+|---|---|
+| Squiggles on correct lines | Lines 20, 28, 36, 41, 42, 48 get red/orange squiggles |
+| Hover tooltip | Shows severity badge, framework tag, and AI fix |
+| Fix button | Lightbulb → Apply Fix → code is replaced → save re-triggers scan |
+| CLI not installed | Error message: `ComplianceAI: CLI not found` appears in notification |
+| Backend offline | Sidebar shows: *"Could not fetch data from the server"* |
+
+---
+
+## Troubleshooting
+
+### No squiggles appear
+- Open **Output → ComplianceAI** to see scan logs
+- Check that `compliance-cli` is on your PATH: `which compliance-cli`
+- Confirm the file language is detected correctly (bottom-right of VS Code)
+
+### Sidebar shows error
+- Confirm Person 3's backend is running: `curl http://localhost:8000/api/v1/findings`
+- Check your JWT token in settings
+
+### TypeScript compile errors
+```bash
+npm install
+npm run compile
+```
+
+---
+
+## Project Structure
+
+```
+extension/
+├── src/
+│   ├── extension.ts          # Activation, file-watcher, command registration
+│   ├── scanner.ts            # Spawns the compliance-cli subprocess
+│   ├── sarifParser.ts        # Converts SARIF JSON → ScanResult[]
+│   ├── diagnosticProvider.ts # ScanResult[] → vscode.Diagnostic[]
+│   ├── hoverProvider.ts      # Hover tooltip with fix suggestion
+│   ├── codeActionProvider.ts # Lightbulb → WorkspaceEdit apply fix
+│   ├── statusBar.ts          # Status bar badge manager
+│   ├── sidebarProvider.ts    # WebviewViewProvider for sidebar panel
+│   ├── apiClient.ts          # HTTP client for backend (Person 3)
+│   └── types.ts              # Shared TypeScript interfaces
+├── test-fixtures/
+│   └── vulnerable.py         # Known-vulnerable file for manual testing
+├── out/                      # Compiled JS output (git-ignored)
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+---
+
+## Team Integration
+
+| Person | Responsibility | Integration point |
+|---|---|---|
+| **Person 1 (CLI)** | `compliance-cli` binary | `scanner.ts` spawns it, reads SARIF from stdout |
+| **Person 2 (Extension)** | This extension | Bridges CLI ↔ VS Code ↔ Dashboard |
+| **Person 3 (Backend)** | REST API at `:8000` | `apiClient.ts` calls `GET /api/v1/findings` with JWT |
+
+---
+
+## License
+
+MIT — Hackathon Project

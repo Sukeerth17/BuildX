@@ -7,82 +7,82 @@ import { OutputChannel } from 'vscode';
  * Allows users to apply AI-suggested fixes with one click.
  */
 export class CodeActionProvider implements vscode.CodeActionProvider {
-  private diagnosticProvider: DiagnosticProvider;
-  private outputChannel: OutputChannel;
+    private diagnosticProvider: DiagnosticProvider;
+    private outputChannel: OutputChannel;
 
-  constructor(diagnosticProvider: DiagnosticProvider, outputChannel: OutputChannel) {
-    this.diagnosticProvider = diagnosticProvider;
-    this.outputChannel = outputChannel;
-  }
-
-  /**
-   * Provide code actions for a position in a document.
-   * @param document - The document
-   * @param range - The selected range
-   * @param context - The code action context
-   * @returns Array of code actions
-   */
-  provideCodeActions(
-    document: vscode.TextDocument,
-    range: vscode.Range | vscode.Selection,
-    context: vscode.CodeActionContext
-  ): vscode.ProviderResult<vscode.CodeAction[]> {
-    const codeActions: vscode.CodeAction[] = [];
-
-    const diagnostics = context.diagnostics.filter(
-      (diag) => diag.source === 'ComplianceAI'
-    );
-
-    if (diagnostics.length === 0) {
-      return codeActions;
+    constructor(diagnosticProvider: DiagnosticProvider, outputChannel: OutputChannel) {
+        this.diagnosticProvider = diagnosticProvider;
+        this.outputChannel = outputChannel;
     }
 
-    const results = this.diagnosticProvider.getResults(document.fileName);
+    /**
+     * Provide code actions for a position in a document.
+     * @param document - The document
+     * @param range - The selected range
+     * @param context - The code action context
+     * @returns Array of code actions
+     */
+    provideCodeActions(
+        document: vscode.TextDocument,
+        range: vscode.Range | vscode.Selection,
+        context: vscode.CodeActionContext
+    ): vscode.ProviderResult<vscode.CodeAction[]> {
+        const codeActions: vscode.CodeAction[] = [];
 
-    for (const diagnostic of diagnostics) {
-      const scanResult = results.find(
-        (r) => r.ruleId === diagnostic.code && r.line === range.start.line + 1
-      );
+        const diagnostics = context.diagnostics.filter(
+            (diag) => diag.source === 'ComplianceAI'
+        );
 
-      if (!scanResult) {
-        continue;
-      }
+        if (diagnostics.length === 0) {
+            return codeActions;
+        }
 
-      // Create "Apply Fix" code action
-      const applyFixAction = new vscode.CodeAction(
-        `Apply Fix: ${scanResult.ruleId}`,
-        vscode.CodeActionKind.QuickFix
-      );
+        const results = this.diagnosticProvider.getResults(document.fileName);
 
-      applyFixAction.command = {
-        command: 'complianceai.applyFix',
-        title: 'Apply Fix',
-        arguments: [document.uri, scanResult],
-      };
+        for (const diagnostic of diagnostics) {
+            const scanResult = results.find(
+                (r) => r.ruleId === diagnostic.code && r.line === range.start.line + 1
+            );
 
-      applyFixAction.diagnostics = [diagnostic];
-      applyFixAction.isPreferred = scanResult.severity === 'CRITICAL';
+            if (!scanResult) {
+                continue;
+            }
 
-      codeActions.push(applyFixAction);
+            // Create "Apply Fix" code action
+            const applyFixAction = new vscode.CodeAction(
+                `Apply Fix: ${scanResult.ruleId}`,
+                vscode.CodeActionKind.QuickFix
+            );
 
-      // Create informational code action (no-op, just for context)
-      const infoAction = new vscode.CodeAction(
-        `Framework: ${scanResult.framework}`,
-        vscode.CodeActionKind.Refactor
-      );
+            applyFixAction.command = {
+                command: 'complianceai.applyFix',
+                title: 'Apply Fix',
+                arguments: [document.uri, scanResult],
+            };
 
-      codeActions.push(infoAction);
+            applyFixAction.diagnostics = [diagnostic];
+            applyFixAction.isPreferred = scanResult.severity === 'CRITICAL';
+
+            codeActions.push(applyFixAction);
+
+            // Create informational code action (no-op, just for context)
+            const infoAction = new vscode.CodeAction(
+                `Framework: ${scanResult.framework}`,
+                vscode.CodeActionKind.Refactor
+            );
+
+            codeActions.push(infoAction);
+        }
+
+        return codeActions;
     }
 
-    return codeActions;
-  }
-
-  /**
-   * Resolve a code action (optional, for performance).
-   */
-  resolveCodeAction?(
-    codeAction: vscode.CodeAction
-  ): vscode.ProviderResult<vscode.CodeAction> {
-    return codeAction;
-  }
+    /**
+     * Resolve a code action (optional, for performance).
+     */
+    resolveCodeAction?(
+        codeAction: vscode.CodeAction
+    ): vscode.ProviderResult<vscode.CodeAction> {
+        return codeAction;
+    }
 }
